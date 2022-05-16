@@ -327,10 +327,11 @@ class GameRegistry
         GameRegistry() {}
     public:
         int CreateGame(shared_ptr<Player> player, shared_ptr<DrawDeck> drawDeck)
-        {            
-            auto gameData = shared_ptr<Game>(new Game(player, drawDeck));
+        {
+            drawDeck->ReshuffleIfNeeded();
+            auto game = shared_ptr<Game>(new Game(player, drawDeck));
             int id = Rnd::GetInstance().GetEngine()();
-            games.insert_or_assign(id, gameData);
+            games.insert_or_assign(id, game);
             return id;
         }
         shared_ptr<Game> GetGame(int id)
