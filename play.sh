@@ -19,7 +19,7 @@ while (( CASH > 0 )); do
   RESULT=null
   while [ "$RESULT" = "null" ]; do
 
-    read -p "hit or stand : " CMD
+    read -p "[h]it or [s]tand : " CMD
 
     if [ "$CMD" = "h" ]; then
       RESP=$(curl -s http://localhost:8000/game/${GAME_ID}/hit -X POST|jq)
