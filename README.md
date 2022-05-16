@@ -1,5 +1,7 @@
 # Build
 
+**You need to have oat++ installed, see https://oatpp.io/docs/installation/unix-linux/**
+
 ```bash
 mkdir build && cd build
 cmake ..
