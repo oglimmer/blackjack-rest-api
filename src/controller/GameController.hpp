@@ -9,8 +9,39 @@
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/macro/component.hpp"
 
-#include OATPP_CODEGEN_BEGIN(ApiController) //<-- Begin Codegen
+class CustomErrorHandler : public oatpp::base::Countable, public oatpp::web::server::handler::ErrorHandler {
+public:
+    CustomErrorHandler() = default;
 
+public:
+    static std::shared_ptr<CustomErrorHandler> createShared() {
+        return std::make_shared<CustomErrorHandler>();
+    }
+
+    std::shared_ptr<oatpp::web::protocol::http::outgoing::Response>
+    handleError(const std::exception_ptr &error) override {
+        try {
+            std::rethrow_exception(error);
+        } catch (const oatpp::web::protocol::CommunicationError &e) {
+            return oatpp::web::protocol::http::outgoing::ResponseFactory::createResponse(
+                    oatpp::web::protocol::http::Status::CODE_400, e.what());
+        } catch (const std::runtime_error &e) {
+            return oatpp::web::protocol::http::outgoing::ResponseFactory::createResponse(
+                    oatpp::web::protocol::http::Status::CODE_500, e.what());
+        } catch (...) {
+            throw;
+        }
+    }
+
+    std::shared_ptr<oatpp::web::protocol::http::outgoing::Response>
+    handleError(const oatpp::web::protocol::http::Status &status, const oatpp::String &message,
+                const Headers &headers) override {
+        throw std::logic_error("Function not implemented");
+    }
+
+};
+
+#include OATPP_CODEGEN_BEGIN(ApiController) //<-- Begin Codegen
 
 class GameController : public oatpp::web::server::api::ApiController {
 public:
@@ -18,8 +49,10 @@ public:
      * Constructor with object mapper.
      * @param objectMapper - default object mapper used to serialize/deserialize DTOs.
      */
-    GameController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
-            : oatpp::web::server::api::ApiController(objectMapper) {}
+    explicit GameController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
+            : oatpp::web::server::api::ApiController(objectMapper) {
+        setErrorHandler(CustomErrorHandler::createShared());
+    }
 
 public:
 

@@ -10,10 +10,17 @@ echo "Your cash: $CASH"
 
 while (( CASH > 0 )); do
 
-  read -p "Your bet : " BET
-
   GAME_ID=$(curl -s http://localhost:8000/game -X POST -d '{"playerId": '${PLAYER_ID}', "deckId": '${DECK_ID}'}' -H 'Content-Type: application/json'|jq -r '.gameId')
-  curl -s http://localhost:8000/game/${GAME_ID}/bet/${BET} -X POST|jq
+
+  BET_CODE=null
+  while [ "$BET_CODE" != "200" ]; do
+    read -p "Your bet : " BET
+    BET_RESP=$(curl --write-out '\n%{http_code}' -s --output - http://localhost:8000/game/${GAME_ID}/bet/${BET} -X POST)
+    BET_CODE=$(echo "$BET_RESP"|tail -1)
+  done
+
+  # macOS compatible "tail -n -1"
+  echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq
 
   RESULT=null
   while [ "$RESULT" = "null" ]; do

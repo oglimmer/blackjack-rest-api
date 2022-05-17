@@ -111,7 +111,7 @@ bool Game::Stand(StandResponse::Wrapper standResponse) {
 }
 
 void Game::Bet(int _bet, BetResponse::Wrapper betResponse) {
-    if (_bet > this->player->GetCash()) {
+    if (_bet > this->player->GetCash() || _bet < 1) {
         throw std::exception();
     }
     this->bet = _bet;
