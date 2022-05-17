@@ -17,9 +17,9 @@ class EndResponse : public oatpp::DTO {
     DTO_FIELD(String, result);
 };
 
-class BetResponse : public oatpp::DTO {
+class BetResponse : public EndResponse {
 
-    DTO_INIT(BetResponse, DTO)
+    DTO_INIT(BetResponse, EndResponse)
 
     DTO_FIELD(String, card1);
     DTO_FIELD(String, card2);

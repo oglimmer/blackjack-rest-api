@@ -45,6 +45,9 @@ int DrawnCards::GetValue() const {
         return start + card->GetValue(cards);
     });
 }
+int DrawnCards::Size() const {
+    return cards.size();
+}
 
 void DrawDeck::AddCard(const std::shared_ptr<Card> card) {
     Deck::AddCard(card);
@@ -110,7 +113,7 @@ bool Game::Stand(StandResponse::Wrapper standResponse) {
     return CheckEnd(true, standResponse);
 }
 
-void Game::Bet(int _bet, BetResponse::Wrapper betResponse) {
+bool Game::Bet(int _bet, BetResponse::Wrapper betResponse) {
     if (_bet > this->player->GetCash() || _bet < 1) {
         throw std::exception();
     }
@@ -138,6 +141,8 @@ void Game::Bet(int _bet, BetResponse::Wrapper betResponse) {
     drawnCards->AddCard(c2);
 
     betResponse->yourTotal = drawnCards->GetValue();
+
+    return CheckEnd(false, betResponse);
 }
 
 bool Game::CheckEnd(bool done, EndResponse::Wrapper endResponse) {
@@ -145,26 +150,40 @@ bool Game::CheckEnd(bool done, EndResponse::Wrapper endResponse) {
     if (playerTotalValue > 21) {
         endResponse->result = "You busted!!!";
         return true;
-    } else if (done) {
+    } else if (done || playerTotalValue == 21) {
         endResponse->dealersSecondCard = dealerCardClosed->GetDesc();
         int totalValueDealer = drawnCardsDealer->GetValue();
         endResponse->dealersAdditionalCard = {};
-        while (totalValueDealer < 17) {
+        while (totalValueDealer < 17 && !(playerTotalValue == 21 && drawnCards->Size() == 2)) {
             const auto card = drawDeck->DrawCard();
             drawnCardsDealer->AddCard(card);
             totalValueDealer = drawnCardsDealer->GetValue();
             endResponse->dealersAdditionalCard->push_back(card->GetDesc());
         }
         endResponse->dealerTotal = totalValueDealer;
-        if (totalValueDealer > 21) {
+        if (playerTotalValue == 21 && drawnCards->Size() == 2 && totalValueDealer == 21 && drawnCardsDealer->Size() == 2) {
+            endResponse->result = "You and the dealer have Blackjack!!";
+            player->AddCash(1.5 * bet);
+        } else if (playerTotalValue == 21 && drawnCards->Size() == 2) {
+            endResponse->result = "You have Blackjack!!";
+            player->AddCash(2.5 * bet);
+        } else if (totalValueDealer == 21 && drawnCardsDealer->Size() == 2) {
+            endResponse->result = "The dealer has Blackjack!!";
+        } else if (totalValueDealer > 21) {
             endResponse->result = "You won!!";
             player->AddCash(2 * bet);
         } else if (playerTotalValue > totalValueDealer) {
             endResponse->result = "You won!!";
             player->AddCash(2 * bet);
+        } else if (playerTotalValue == totalValueDealer) {
+            endResponse->result = "Tie!!";
+            player->AddCash(bet);
         } else {
             endResponse->result = "You lost!!";
         }
+        return true;
+    } else if (drawnCardsDealer->GetValue() == 21 && drawnCardsDealer->Size() == 2) {
+        endResponse->result = "The dealer has Blackjack!!";
         return true;
     }
     return false;

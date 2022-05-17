@@ -22,7 +22,7 @@ while (( CASH > 0 )); do
   # macOS compatible "tail -n -1"
   echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq
 
-  RESULT=null
+  RESULT=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.result')
   while [ "$RESULT" = "null" ]; do
 
     read -p "[h]it or [s]tand : " CMD

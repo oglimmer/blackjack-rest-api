@@ -55,6 +55,7 @@ public:
 class DrawnCards : public Deck {
 public:
     int GetValue() const;
+    int Size() const;
 };
 
 class DrawDeck : public Deck {
@@ -118,7 +119,7 @@ public:
 
     bool Stand(StandResponse::Wrapper standResponse);
 
-    void Bet(int _bet, BetResponse::Wrapper betResponse);
+    bool Bet(int _bet, BetResponse::Wrapper betResponse);
 
 private:
     bool CheckEnd(bool done, EndResponse::Wrapper endResponse);
