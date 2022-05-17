@@ -13,7 +13,7 @@ add_library(${project_name}-lib
         src/dto/DTOs.hpp
         src/logic/GameLogic.cpp
         src/logic/GameLogic.hpp
-)
+        src/logic/Registries.cpp src/logic/Registries.hpp)
 
 ## link libs
 

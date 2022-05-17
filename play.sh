@@ -21,16 +21,20 @@ while (( CASH > 0 )); do
     read -p "[h]it or [s]tand : " CMD
 
     if [ "$CMD" = "h" ]; then
-      RESP=$(curl -s http://localhost:8000/game/${GAME_ID}/hit -X POST|jq)
+      CMD=hit
+    elif [ "$CMD" = "s" ]; then
+      CMD=stand
+    else
+      CMD=
     fi
 
-    if [ "$CMD" = "s" ]; then
-      RESP=$(curl -s http://localhost:8000/game/${GAME_ID}/stand -X POST|jq)
+    if [ -n "$CMD" ]; then
+      RESP=$(curl -s http://localhost:8000/game/${GAME_ID}/$CMD -X POST|jq)
+
+      echo "$RESP"|jq
+
+      RESULT=$(echo "$RESP"|jq -r '.result')
     fi
-
-    echo "$RESP"|jq
-
-    RESULT=$(echo "$RESP"|jq -r '.result')
 
   done
 

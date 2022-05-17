@@ -3,6 +3,7 @@
 
 #include "dto/DTOs.hpp"
 #include "logic/GameLogic.hpp"
+#include "logic/Registries.hpp"
 
 #include "oatpp/web/server/api/ApiController.hpp"
 #include "oatpp/core/macro/codegen.hpp"
