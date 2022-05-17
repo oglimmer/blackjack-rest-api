@@ -34,6 +34,9 @@ public:
     ENDPOINT("GET", "/player/{playerId}", getPlayer, PATH(Int32, playerId)) {
         auto &reg = PlayerRegistry::GetInstance();
         auto player = reg.GetPlayer(playerId);
+        if (!player) {
+            return createResponse(Status::CODE_404, "Unable to find player");
+        }
 
         auto dto = GetPlayerResponse::createShared();
         dto->cash = player->GetCash();
@@ -55,6 +58,14 @@ public:
         auto &gameReg = GameRegistry::GetInstance();
         auto player = playerReg.GetPlayer(createGameDto->playerId.getValue(-1));
         auto drawDeck = drawDeckReg.GetDrawDeck(createGameDto->deckId.getValue(-1));
+
+        if (!player) {
+            return createResponse(Status::CODE_404, "Unable to find player");
+        }
+        if (!drawDeck) {
+            return createResponse(Status::CODE_404, "Unable to find deck");
+        }
+
         auto id = gameReg.CreateGame(player, drawDeck);
 
         auto dto = CreateGameResponse::createShared();
@@ -66,6 +77,9 @@ public:
              PATH(Int32, gameId),
              PATH(Int32, bet)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
+        if (!game) {
+            return createResponse(Status::CODE_404, "Unable to find game");
+        }
 
         auto dto = BetResponse::createShared();
         game->Bet(bet, dto);
@@ -75,6 +89,9 @@ public:
     ENDPOINT("POST", "/game/{gameId}/hit", hit,
              PATH(Int32, gameId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
+        if (!game) {
+            return createResponse(Status::CODE_404, "Unable to find game");
+        }
 
         auto dto = HitResponse::createShared();
         if (game->Hit(dto)) {
@@ -86,6 +103,9 @@ public:
     ENDPOINT("POST", "/game/{gameId}/stand", stand,
              PATH(Int32, gameId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
+        if (!game) {
+            return createResponse(Status::CODE_404, "Unable to find game");
+        }
 
         auto dto = StandResponse::createShared();
         if (game->Stand(dto)) {
