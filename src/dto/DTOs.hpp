@@ -11,8 +11,8 @@ class EndResponse : public oatpp::DTO {
     DTO_INIT(EndResponse, DTO)
 
     DTO_FIELD(String, dealersSecondCard);
-    DTO_FIELD(String, dealersAdditionalCard);
     DTO_FIELD(Int32, dealerTotal);
+    DTO_FIELD(Vector<String>, dealersAdditionalCard);
 
     DTO_FIELD(String, result);
 };

@@ -77,7 +77,9 @@ public:
         auto game = GameRegistry::GetInstance().GetGame(gameId);
 
         auto dto = HitResponse::createShared();
-        game->Hit(dto);
+        if (game->Hit(dto)) {
+            GameRegistry::GetInstance().DeleteGame(gameId);
+        }
         return createDtoResponse(Status::CODE_200, dto);
     }
 
@@ -86,7 +88,9 @@ public:
         auto game = GameRegistry::GetInstance().GetGame(gameId);
 
         auto dto = StandResponse::createShared();
-        game->Stand(dto);
+        if (game->Stand(dto)) {
+            GameRegistry::GetInstance().DeleteGame(gameId);
+        }
         return createDtoResponse(Status::CODE_200, dto);
     }
 

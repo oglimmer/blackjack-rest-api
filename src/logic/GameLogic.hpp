@@ -88,13 +88,6 @@ class Deck
         {
             return this->cards;
         }
-        void debug() const
-        {
-            for_each(cards.begin(), cards.end(), [](shared_ptr<Card> const& card)
-            {
-                cout << card->GetDesc() << endl;
-            });            
-        }
 };
 
 class Rnd
@@ -150,7 +143,6 @@ class DrawDeck : public Deck
                 cards.clear();
                 cards.insert(cards.end(), allCards.begin(), allCards.end());
                 std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
-                cout << "Deck reshuffled" << endl;
             }
         }
 };
@@ -218,7 +210,7 @@ class Game
         int bet = 0;
     public:
 
-        void Hit(HitResponse::Wrapper hitResponse)
+    bool Hit(HitResponse::Wrapper hitResponse)
         {
             const auto card = drawDeck->DrawCard();
             drawnCards->AddCard(card);
@@ -226,13 +218,13 @@ class Game
             hitResponse->drawnCard = card->GetDesc();
             hitResponse->yourTotal = drawnCards->GetValue();
 
-            CheckEnd(false, hitResponse);
+            return CheckEnd(false, hitResponse);
         }
 
 
-        void Stand(StandResponse::Wrapper standResponse)
+        bool Stand(StandResponse::Wrapper standResponse)
         {
-            CheckEnd(true, standResponse);
+            return CheckEnd(true, standResponse);
         }
 
         void Bet(int _bet, BetResponse::Wrapper betResponse)
@@ -266,21 +258,22 @@ class Game
             betResponse->yourTotal = drawnCards->GetValue();
         }
     private:
-        void CheckEnd(bool done, EndResponse::Wrapper endResponse)
+        bool CheckEnd(bool done, EndResponse::Wrapper endResponse)
         {
             const int playerTotalValue = drawnCards->GetValue();
             if (playerTotalValue > 21) {
                 endResponse->result = "You busted!!!";
+                return true;
             }
             else if (done) {
                 endResponse->dealersSecondCard = dealerCardClosed->GetDesc();
                 int totalValueDealer = drawnCardsDealer->GetValue();
-                endResponse->dealersAdditionalCard = "";
+                endResponse->dealersAdditionalCard = {};
                 while (totalValueDealer < 17) {
                     const auto card = drawDeck->DrawCard();
                     drawnCardsDealer->AddCard(card);
                     totalValueDealer = drawnCardsDealer->GetValue();
-                    endResponse->dealersAdditionalCard = endResponse->dealersAdditionalCard + ", " + card->GetDesc();
+                    endResponse->dealersAdditionalCard->push_back(card->GetDesc());
                 }
                 endResponse->dealerTotal = totalValueDealer;
                 if (totalValueDealer > 21) {
@@ -292,7 +285,9 @@ class Game
                 } else {
                     endResponse->result = "You lost!!";
                 }
-            }            
+                return true;
+            }
+            return false;
         }
 
 };
@@ -337,6 +332,17 @@ class GameRegistry
         shared_ptr<Game> GetGame(int id)
         {
             return games[id];
+        }
+        void DeleteGame(shared_ptr<Game> game) {
+            for(auto it = games.begin(); it != games.end(); ++it) {
+                if (it->second == game) {
+                    games.erase(it);
+                    break;
+                }
+            }
+        }
+        void DeleteGame(int id) {
+            games.erase(id);
         }
 };
 
