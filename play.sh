@@ -2,20 +2,22 @@
 
 set -eu
 
-PLAYER_ID=$(curl -s http://localhost:8000/player -X POST|jq -r '.playerId')
-DECK_ID=$(curl -s http://localhost:8000/deck -X POST|jq -r '.deckId')
+SERVER_BASE=${SERVER_BASE:-http://localhost:8000}
 
-CASH=$(curl -s http://localhost:8000/player/${PLAYER_ID}|jq -r '.cash')
+PLAYER_ID=$(curl -s $SERVER_BASE/player -X POST|jq -r '.playerId')
+DECK_ID=$(curl -s $SERVER_BASE/deck -X POST|jq -r '.deckId')
+
+CASH=$(curl -s $SERVER_BASE/player/${PLAYER_ID}|jq -r '.cash')
 echo "Your cash: $CASH"
 
 while (( CASH > 0 )); do
 
-  GAME_ID=$(curl -s http://localhost:8000/game -X POST -d '{"playerId": '${PLAYER_ID}', "deckId": '${DECK_ID}'}' -H 'Content-Type: application/json'|jq -r '.gameId')
+  GAME_ID=$(curl -s $SERVER_BASE/game -X POST -d '{"playerId": '${PLAYER_ID}', "deckId": '${DECK_ID}'}' -H 'Content-Type: application/json'|jq -r '.gameId')
 
   BET_CODE=null
   while [ "$BET_CODE" != "200" ]; do
     read -p "Your bet : " BET
-    BET_RESP=$(curl --write-out '\n%{http_code}' -s --output - http://localhost:8000/game/${GAME_ID}/bet/${BET} -X POST)
+    BET_RESP=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet/${BET} -X POST)
     BET_CODE=$(echo "$BET_RESP"|tail -1)
   done
 
@@ -36,7 +38,7 @@ while (( CASH > 0 )); do
     fi
 
     if [ -n "$CMD" ]; then
-      RESP=$(curl -s http://localhost:8000/game/${GAME_ID}/$CMD -X POST|jq)
+      RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/$CMD -X POST|jq)
 
       echo "$RESP"|jq
 
@@ -45,6 +47,6 @@ while (( CASH > 0 )); do
 
   done
 
-  CASH=$(curl -s http://localhost:8000/player/${PLAYER_ID}|jq -r '.cash')
+  CASH=$(curl -s $SERVER_BASE/player/${PLAYER_ID}|jq -r '.cash')
   echo "Your cash: $CASH"
 done

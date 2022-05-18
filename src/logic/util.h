@@ -8,6 +8,7 @@
 #include <memory>
 #include <algorithm>
 #include <random>
+#include <chrono>
 
 #define SINGLETON(clazz) \
     public: \
