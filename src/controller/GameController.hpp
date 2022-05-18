@@ -56,6 +56,10 @@ public:
 
 public:
 
+    ENDPOINT("GET", "/", root) {
+        return createResponse(Status::CODE_200);
+    }
+
     ENDPOINT("POST", "/player", createPlayer) {
         auto &reg = PlayerRegistry::GetInstance();
         auto id = reg.CreatePlayer();
