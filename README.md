@@ -1,3 +1,12 @@
+# Run via Docker
+
+```
+docker build --tag blackjack .
+docker run --rm -p 8000:8000 blackjack
+```
+
+Now use `./play.sh`.
+
 # Build
 
 **You need to have oat++ installed, see https://oatpp.io/docs/installation/unix-linux/**
