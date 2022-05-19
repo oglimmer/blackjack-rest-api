@@ -28,6 +28,8 @@ void run() {
   /* Print info about server port */
   OATPP_LOGI("BlackJack", "Server running on port %s", connectionProvider->getProperty("port").getData());
 
+  TimeoutCleaner::GetInstance();
+
   /* Run server */
   server.run();
   

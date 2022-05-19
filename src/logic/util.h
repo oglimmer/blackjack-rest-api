@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include <sstream>
+#include <iomanip>
 
 #define SINGLETON(clazz) \
     public: \
@@ -36,6 +38,13 @@ public:
         return engine;
     }
 };
+
+inline std::string toString(const std::chrono::time_point<std::chrono::system_clock>& input) {
+    std::time_t t = std::chrono::system_clock::to_time_t(input);
+    std::stringstream ss;
+    ss << std::put_time( std::localtime( &t ), "%FT%T%z" );
+    return ss.str();
+}
 
 
 #endif //BLACKJACK_UTIL_H

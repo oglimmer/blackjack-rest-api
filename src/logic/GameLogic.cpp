@@ -1,6 +1,10 @@
 
 #include "GameLogic.hpp"
 
+#define LIFETIME_GAME 3600
+#define LIFETIME_PLAYER 3600
+#define LIFETIME_DRAWDECK 3600
+
 Card::Card(const std::string &desc) : desc(desc) {
 }
 
@@ -72,6 +76,19 @@ void DrawDeck::ReshuffleIfNeeded() {
     }
 }
 
+bool DrawDeck::IsOutDated() const {
+    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+        OATPP_LOGD("DrawDeck", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
+    }
+    std::chrono::seconds later{LIFETIME_DRAWDECK};
+    auto now = std::chrono::system_clock::now();
+    auto t1 = now - later;
+    return this->lastUsed < t1;
+}
+
+void DrawDeck::Use() {
+    this->lastUsed = std::chrono::system_clock::now();
+}
 
 void Package::Add52Cards(std::shared_ptr<DrawDeck> drawDeck) {
     const std::string suits[] = {"Hearts", "Spades", "Diamonds", "Clubs"};
@@ -189,3 +206,30 @@ bool Game::CheckEnd(bool done, EndResponse::Wrapper endResponse) {
     return false;
 }
 
+bool Game::IsOutDated() const {
+    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+        OATPP_LOGD("Game", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
+    }
+    std::chrono::seconds later{LIFETIME_GAME};
+    auto now = std::chrono::system_clock::now();
+    auto t1 = now - later;
+    return this->lastUsed < t1;
+}
+
+void Game::Use() {
+    this->lastUsed = std::chrono::system_clock::now();
+}
+
+bool Player::IsOutDated() const {
+    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+        OATPP_LOGD("Player", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
+    }
+    std::chrono::seconds later{LIFETIME_PLAYER};
+    auto now = std::chrono::system_clock::now();
+    auto t1 = now - later;
+    return this->lastUsed < t1;
+}
+
+void Player::Use() {
+    this->lastUsed = std::chrono::system_clock::now();
+}

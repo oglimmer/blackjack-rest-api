@@ -1,6 +1,7 @@
 #ifndef GameLogic_hpp
 #define GameLogic_hpp
 
+#define OATPP_DISABLE_LOGD
 
 #include <iostream>
 #include <vector>
@@ -59,6 +60,8 @@ public:
 };
 
 class DrawDeck : public Deck {
+private:
+    std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 protected:
     std::vector<std::shared_ptr<Card>> allCards;
 public:
@@ -69,6 +72,10 @@ public:
     const std::shared_ptr<Card> DrawCard();
 
     void ReshuffleIfNeeded();
+
+    bool IsOutDated() const;
+
+    void Use();
 };
 
 
@@ -89,6 +96,7 @@ public:
 
 private:
     int cash;
+    std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
     int GetCash() const {
         return cash;
@@ -101,6 +109,10 @@ public:
     void AddCash(int bet) {
         cash += bet;
     }
+
+    bool IsOutDated() const;
+
+    void Use();
 };
 
 class Game {
@@ -114,6 +126,7 @@ private:
     std::shared_ptr<Card> dealerCardClosed;
     std::shared_ptr<Player> player;
     int bet = 0;
+    std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
     bool Hit(HitResponse::Wrapper hitResponse);
 
@@ -121,6 +134,9 @@ public:
 
     bool Bet(int _bet, BetResponse::Wrapper betResponse);
 
+    bool IsOutDated() const;
+
+    void Use();
 private:
     bool CheckEnd(bool done, EndResponse::Wrapper endResponse);
 };
