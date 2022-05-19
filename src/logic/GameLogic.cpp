@@ -5,6 +5,8 @@
 #define LIFETIME_PLAYER 3600
 #define LIFETIME_DRAWDECK 3600
 
+/* ***************************************** Card ******************************************************* */
+
 Card::Card(const std::string &desc) : desc(desc) {
 }
 
@@ -12,28 +14,31 @@ const std::string &Card::GetDesc() const {
     return this->desc;
 }
 
+/* ***************************************** RegularCard ******************************************************* */
 
 RegularCard::RegularCard(int value, const std::string &desc) : Card(desc), value(value) {
 }
 
-int RegularCard::GetValue([[maybe_unused]] const std::vector<std::shared_ptr<Card>> &BunchOfCards) const {
-    return this->value;
+void RegularCard::GetValue(std::vector<int> &result) const {
+    std::for_each(result.begin(), result.end(), [&](int& i) { i += this->value; });
 }
 
+/* ***************************************** AceCard ******************************************************* */
 
 AceCard::AceCard(const std::string &desc) : Card(desc) {
 }
 
-int AceCard::GetValue(const std::vector<std::shared_ptr<Card>> &BunchOfCards) const {
-    int total = accumulate(BunchOfCards.begin(), BunchOfCards.end(), 0, [&](int start, std::shared_ptr<Card> card) {
-        if (card.get() != this) {
-            return start + card->GetValue(BunchOfCards);
-        }
-        return start;
-    });
-    return total < 11 ? 11 : 1;
+void AceCard::GetValue(std::vector<int> &result) const {
+    std::vector<int> vect1(result);
+    std::vector<int> vect2(result);
+    std::for_each(vect1.begin(), vect1.end(), [&](int& i) { i += 1; });
+    std::for_each(vect2.begin(), vect2.end(), [&](int& i) { i += 11; });
+    result.clear();
+    result.insert(result.begin(), vect1.begin(), vect1.end());
+    result.insert(result.begin(), vect2.begin(), vect2.end());
 }
 
+/* ***************************************** Deck ******************************************************* */
 
 void Deck::AddCard(const std::shared_ptr<Card> card) {
     this->cards.push_back(card);
@@ -43,15 +48,37 @@ const std::vector<std::shared_ptr<Card>> &Deck::GetCards() const {
     return this->cards;
 }
 
+/* ***************************************** DrawnCards ******************************************************* */
 
 int DrawnCards::GetValue() const {
-    return accumulate(cards.begin(), cards.end(), 0, [&](int start, std::shared_ptr<Card> card) {
-        return start + card->GetValue(cards);
+    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+        OATPP_LOGD("DrawnCards", "[GetValue] cards.size=%d", cards.size());
+        std::for_each(cards.begin(), cards.end(), [&](const std::shared_ptr<Card> &card) {
+            OATPP_LOGD("DrawnCards", "[GetValue] card=%s", card->GetDesc().c_str());
+        });
+    }
+    std::vector<int> result = {0};
+    std::for_each(cards.begin(), cards.end(), [&](const std::shared_ptr<Card> &card) { card->GetValue(result); });
+    OATPP_LOGD("DrawnCards", "[GetValue] result.size=%d", result.size());
+    int largestValueLess22 = 0;
+    int smallestValueLarger21 = 99999;
+    std::for_each(result.begin(), result.end(), [&](int i) {
+        OATPP_LOGD("DrawnCards", "[GetValue] found sub-value=%d", i);
+        if (i <= 21 && i > largestValueLess22) {
+            largestValueLess22 = i;
+        }
+        if (i > 21 && i < smallestValueLarger21) {
+            smallestValueLarger21 = i;
+        }
     });
+    OATPP_LOGD("DrawnCards", "[GetValue] largestValueLess22=%d, smallestValueLarger21=%d", largestValueLess22, smallestValueLarger21);
+    return largestValueLess22 > 0 ? largestValueLess22 : smallestValueLarger21;
 }
 int DrawnCards::Size() const {
     return cards.size();
 }
+
+/* ***************************************** DrawDeck ******************************************************* */
 
 void DrawDeck::AddCard(const std::shared_ptr<Card> card) {
     Deck::AddCard(card);
@@ -90,6 +117,8 @@ void DrawDeck::Use() {
     this->lastUsed = std::chrono::system_clock::now();
 }
 
+/* ***************************************** Package ******************************************************* */
+
 void Package::Add52Cards(std::shared_ptr<DrawDeck> drawDeck) {
     const std::string suits[] = {"Hearts", "Spades", "Diamonds", "Clubs"};
     for (int j = 0; j < 4; j++) {
@@ -111,6 +140,7 @@ std::shared_ptr<DrawDeck> Package::CreateDrawDeck() {
     return newDrawDeck;
 }
 
+/* ***************************************** Game ******************************************************* */
 
 Game::Game(std::shared_ptr<Player> player, std::shared_ptr<DrawDeck> drawDeck) : drawDeck(drawDeck), player(player) {
 }
@@ -218,6 +248,23 @@ bool Game::IsOutDated() const {
 
 void Game::Use() {
     this->lastUsed = std::chrono::system_clock::now();
+}
+
+/* ***************************************** Player ******************************************************* */
+
+Player::Player() : cash(1000) {
+}
+
+int Player::GetCash() const {
+    return cash;
+}
+
+void Player::SubCash(int bet) {
+    cash -= bet;
+}
+
+void Player::AddCash(int bet) {
+    cash += bet;
 }
 
 bool Player::IsOutDated() const {

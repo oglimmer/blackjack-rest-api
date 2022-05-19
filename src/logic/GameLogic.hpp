@@ -21,7 +21,11 @@ protected:
 private:
     const std::string desc;
 public:
-    virtual int GetValue(const std::vector<std::shared_ptr<Card>> &BunchOfCards) const = 0;
+    /**
+     * A card must add its value to all elements of `result`, a card may add new elements if it has multiple values
+     * @param result will have at least 1 element.
+     */
+    virtual void GetValue(std::vector<int> &result) const = 0;
 
     const std::string &GetDesc() const;
 };
@@ -33,14 +37,22 @@ public:
 private:
     const int value;
 public:
-    virtual int GetValue([[maybe_unused]] const std::vector<std::shared_ptr<Card>> &BunchOfCards) const override;
+    /**
+     * A regular card will just add its value to all elements
+     * @param result number of elements will not be changed
+     */
+    virtual void GetValue(std::vector<int> &result) const override;
 };
 
 class AceCard : public Card {
 public:
     explicit AceCard(const std::string &desc);
 
-    virtual int GetValue(const std::vector<std::shared_ptr<Card>> &BunchOfCards) const override;
+    /**
+     * An Ace will duplicate the elements in `result` and then add 1 to the first half and 11 to the second half.
+     * @param result number of elements will be doubled
+     */
+    virtual void GetValue(std::vector<int> &result) const override;
 };
 
 class Deck {
@@ -91,24 +103,17 @@ public:
 
 class Player {
 public:
-    Player() : cash(1000) {
-    }
+    Player();
 
 private:
     int cash;
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
-    int GetCash() const {
-        return cash;
-    }
+    int GetCash() const;
 
-    void SubCash(int bet) {
-        cash -= bet;
-    }
+    void SubCash(int bet);
 
-    void AddCash(int bet) {
-        cash += bet;
-    }
+    void AddCash(int bet);
 
     bool IsOutDated() const;
 
