@@ -46,7 +46,7 @@ while (( CASH > 0 )); do
     fi
 
     if [ -n "$CMD" ]; then
-      RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST|jq)
+      RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST)
 
       echo "$RESP"|jq
 

@@ -126,6 +126,12 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ENDPOINT("POST", "/game/{gameId}/bet/{bet}", deprecatedBet,
+             PATH(Int32, gameId),
+             PATH(Int32, bet)) {
+        return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet with '{playerId, bet}'");
+    }
+
     ENDPOINT("POST", "/game/{gameId}/hit", deprecatedHit,
              PATH(Int32, gameId)) {
         return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet/{betId}/hit");
