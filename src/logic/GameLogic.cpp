@@ -77,6 +77,10 @@ int DrawnCards::GetValue() const {
 int DrawnCards::Size() const {
     return cards.size();
 }
+bool DrawnCards::Val9_10_11() const {
+    int val = GetValue();
+    return val >= 9 && val <= 11;
+}
 
 /* ***************************************** DrawDeck ******************************************************* */
 
@@ -140,32 +144,81 @@ std::shared_ptr<DrawDeck> Package::CreateDrawDeck() {
     return newDrawDeck;
 }
 
+/* ***************************************** Bet ******************************************************* */
+
+Bet::Bet(std::shared_ptr<Player> player, int bet) :
+    player(player),
+    bet(bet),
+    drawnCards( std::unique_ptr<DrawnCards>(new DrawnCards())),
+    betId(Rnd::GetInstance().GetEngine()()){
+}
+
+std::unique_ptr<DrawnCards>& Bet::GetDrawnCards() {
+    return this->drawnCards;
+}
+
+std::shared_ptr<Player> Bet::GetPlayer() const {
+    return this->player;
+}
+
+int Bet::GetBet() const {
+    return this->bet;
+}
+
+int Bet::GetBetId() const {
+    return this->betId;
+}
+
+void Bet::IncBet(int additionalBet) {
+    this->bet += additionalBet;
+}
+
 /* ***************************************** Game ******************************************************* */
 
-Game::Game(std::shared_ptr<Player> player, std::shared_ptr<DrawDeck> drawDeck) : drawDeck(drawDeck), player(player) {
+Game::Game(std::shared_ptr<DrawDeck> drawDeck) :
+        drawDeck(drawDeck) {
 }
 
-bool Game::Hit(HitResponse::Wrapper hitResponse) {
+bool Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse) {
     const auto card = drawDeck->DrawCard();
-    drawnCards->AddCard(card);
+    bet->GetDrawnCards()->AddCard(card);
 
     hitResponse->drawnCard = card->GetDesc();
-    hitResponse->yourTotal = drawnCards->GetValue();
+    hitResponse->yourTotal = bet->GetDrawnCards()->GetValue();
 
-    return CheckEnd(false, hitResponse);
+    return CheckEnd(false, bet, hitResponse);
 }
 
-
-bool Game::Stand(StandResponse::Wrapper standResponse) {
-    return CheckEnd(true, standResponse);
-}
-
-bool Game::Bet(int _bet, BetResponse::Wrapper betResponse) {
-    if (_bet > this->player->GetCash() || _bet < 1) {
+bool Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse) {
+    if (bet->GetBet() > bet->GetPlayer()->GetCash()) {
         throw std::exception();
     }
-    this->bet = _bet;
-    this->player->SubCash(bet);
+    if (!bet->GetDrawnCards()->Val9_10_11()) {
+        throw std::exception();
+    }
+    bet->GetPlayer()->SubCash(bet->GetBet());
+    bet->IncBet(bet->GetBet());
+    const auto card = drawDeck->DrawCard();
+    bet->GetDrawnCards()->AddCard(card);
+
+    hitResponse->drawnCard = card->GetDesc();
+    hitResponse->yourTotal = bet->GetDrawnCards()->GetValue();
+
+    return CheckEnd(true, bet, hitResponse);
+}
+
+
+bool Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper standResponse) {
+    return CheckEnd(true, bet, standResponse);
+}
+
+bool Game::PlaceBet(int bet, std::shared_ptr<Player> player, BetResponse::Wrapper betResponse) {
+    if (bet > player->GetCash() || bet < 1) {
+        throw std::exception();
+    }
+    auto newBet = std::shared_ptr<Bet>(new Bet(player, bet));
+    this->bets.push_back(newBet);
+    player->SubCash(bet);
 
     drawnCardsDealer = std::unique_ptr<DrawnCards>(new DrawnCards());
 
@@ -176,24 +229,23 @@ bool Game::Bet(int _bet, BetResponse::Wrapper betResponse) {
     drawnCardsDealer->AddCard(dealerCardOpen);
     drawnCardsDealer->AddCard(dealerCardClosed);
 
-    drawnCards = std::unique_ptr<DrawnCards>(new DrawnCards());
-
     const auto c1 = drawDeck->DrawCard();
     const auto c2 = drawDeck->DrawCard();
 
     betResponse->card1 = c1->GetDesc();
     betResponse->card2 = c2->GetDesc();
 
-    drawnCards->AddCard(c1);
-    drawnCards->AddCard(c2);
+    newBet->GetDrawnCards()->AddCard(c1);
+    newBet->GetDrawnCards()->AddCard(c2);
 
-    betResponse->yourTotal = drawnCards->GetValue();
+    betResponse->yourTotal = newBet->GetDrawnCards()->GetValue();
+    betResponse->betId = newBet->GetBetId();
 
-    return CheckEnd(false, betResponse);
+    return CheckEnd(false, newBet, betResponse);
 }
 
-bool Game::CheckEnd(bool done, EndResponse::Wrapper endResponse) {
-    const int playerTotalValue = drawnCards->GetValue();
+bool Game::CheckEnd(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper endResponse) {
+    const int playerTotalValue = bet->GetDrawnCards()->GetValue();
     if (playerTotalValue > 21) {
         endResponse->result = "You busted!!!";
         return true;
@@ -201,30 +253,30 @@ bool Game::CheckEnd(bool done, EndResponse::Wrapper endResponse) {
         endResponse->dealersSecondCard = dealerCardClosed->GetDesc();
         int totalValueDealer = drawnCardsDealer->GetValue();
         endResponse->dealersAdditionalCard = {};
-        while (totalValueDealer < 17 && !(playerTotalValue == 21 && drawnCards->Size() == 2)) {
+        while (totalValueDealer < 17 && !(playerTotalValue == 21 && bet->GetDrawnCards()->Size() == 2)) {
             const auto card = drawDeck->DrawCard();
             drawnCardsDealer->AddCard(card);
             totalValueDealer = drawnCardsDealer->GetValue();
             endResponse->dealersAdditionalCard->push_back(card->GetDesc());
         }
         endResponse->dealerTotal = totalValueDealer;
-        if (playerTotalValue == 21 && drawnCards->Size() == 2 && totalValueDealer == 21 && drawnCardsDealer->Size() == 2) {
+        if (playerTotalValue == 21 && bet->GetDrawnCards()->Size() == 2 && totalValueDealer == 21 && drawnCardsDealer->Size() == 2) {
             endResponse->result = "You and the dealer have Blackjack!!";
-            player->AddCash(1.5 * bet);
-        } else if (playerTotalValue == 21 && drawnCards->Size() == 2) {
+            bet->GetPlayer()->AddCash(1.5 * bet->GetBet());
+        } else if (playerTotalValue == 21 && bet->GetDrawnCards()->Size() == 2) {
             endResponse->result = "You have Blackjack!!";
-            player->AddCash(2.5 * bet);
+            bet->GetPlayer()->AddCash(2.5 * bet->GetBet());
         } else if (totalValueDealer == 21 && drawnCardsDealer->Size() == 2) {
             endResponse->result = "The dealer has Blackjack!!";
         } else if (totalValueDealer > 21) {
             endResponse->result = "You won!!";
-            player->AddCash(2 * bet);
+            bet->GetPlayer()->AddCash(2 * bet->GetBet());
         } else if (playerTotalValue > totalValueDealer) {
             endResponse->result = "You won!!";
-            player->AddCash(2 * bet);
+            bet->GetPlayer()->AddCash(2 * bet->GetBet());
         } else if (playerTotalValue == totalValueDealer) {
             endResponse->result = "Tie!!";
-            player->AddCash(bet);
+            bet->GetPlayer()->AddCash(bet->GetBet());
         } else {
             endResponse->result = "You lost!!";
         }
@@ -248,6 +300,11 @@ bool Game::IsOutDated() const {
 
 void Game::Use() {
     this->lastUsed = std::chrono::system_clock::now();
+}
+
+std::shared_ptr<Bet> Game::GetBet(int betId) {
+    return *std::find_if(bets.begin(), bets.end(),
+                            [&](const std::shared_ptr<Bet> &m) -> bool { return m->GetBetId() == betId; });
 }
 
 /* ***************************************** Player ******************************************************* */

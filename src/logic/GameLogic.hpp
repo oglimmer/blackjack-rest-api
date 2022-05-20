@@ -69,6 +69,7 @@ class DrawnCards : public Deck {
 public:
     int GetValue() const;
     int Size() const;
+    bool Val9_10_11() const;
 };
 
 class DrawDeck : public Deck {
@@ -120,30 +121,44 @@ public:
     void Use();
 };
 
+class Bet {
+private:
+    int betId;
+    std::unique_ptr<DrawnCards> drawnCards;
+    int bet;
+    std::shared_ptr<Player> player;
+public:
+    Bet(std::shared_ptr<Player> player, int bet);
+
+    std::unique_ptr<DrawnCards>& GetDrawnCards();
+    std::shared_ptr<Player> GetPlayer() const;
+    int GetBetId() const;
+    int GetBet() const;
+    void IncBet(int additionalBet);
+};
+
 class Game {
 public:
-    Game(std::shared_ptr<Player> player, std::shared_ptr<DrawDeck> drawDeck);
+    Game(std::shared_ptr<DrawDeck> drawDeck);
 
 private:
     std::shared_ptr<DrawDeck> drawDeck;
-    std::unique_ptr<DrawnCards> drawnCards;
     std::unique_ptr<DrawnCards> drawnCardsDealer;
     std::shared_ptr<Card> dealerCardClosed;
-    std::shared_ptr<Player> player;
-    int bet = 0;
+    std::vector<std::shared_ptr<Bet>> bets;
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
-    bool Hit(HitResponse::Wrapper hitResponse);
+    bool PlaceBet(int _bet, std::shared_ptr<Player> player, BetResponse::Wrapper betResponse);
+    std::shared_ptr<Bet> GetBet(int betId);
 
-    bool Stand(StandResponse::Wrapper standResponse);
-
-    bool Bet(int _bet, BetResponse::Wrapper betResponse);
+    bool Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse);
+    bool Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper standResponse);
+    bool DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse);
 
     bool IsOutDated() const;
-
     void Use();
 private:
-    bool CheckEnd(bool done, EndResponse::Wrapper endResponse);
+    bool CheckEnd(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper endResponse);
 };
 
 

@@ -91,64 +91,102 @@ public:
     }
 
     ENDPOINT("POST", "/game", createGame, BODY_DTO(Object < CreateGameDto > , createGameDto)) {
-        auto &playerReg = PlayerRegistry::GetInstance();
         auto &drawDeckReg = DrawDeckRegistry::GetInstance();
         auto &gameReg = GameRegistry::GetInstance();
-        auto player = playerReg.GetPlayer(createGameDto->playerId.getValue(-1));
         auto drawDeck = drawDeckReg.GetDrawDeck(createGameDto->deckId.getValue(-1));
 
-        if (!player) {
-            return createResponse(Status::CODE_404, "Unable to find player");
-        }
         if (!drawDeck) {
             return createResponse(Status::CODE_404, "Unable to find deck");
         }
 
-        auto id = gameReg.CreateGame(player, drawDeck);
+        auto id = gameReg.CreateGame(drawDeck);
 
         auto dto = CreateGameResponse::createShared();
         dto->gameId = id;
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/bet/{bet}", placeBet,
-             PATH(Int32, gameId),
-             PATH(Int32, bet)) {
+    ENDPOINT("POST", "/game/{gameId}/bet", placeBet,
+             BODY_DTO(Object < BetRequest > , betRequest),
+             PATH(Int32, gameId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
+        }
+        auto &playerReg = PlayerRegistry::GetInstance();
+        auto player = playerReg.GetPlayer(betRequest->playerId.getValue(-1));
+        if (!player) {
+            return createResponse(Status::CODE_404, "Unable to find player");
         }
 
         auto dto = BetResponse::createShared();
-        if (game->Bet(bet, dto)) {
+        if (game->PlaceBet(betRequest->bet, player, dto)) {
             GameRegistry::GetInstance().DeleteGame(gameId);
         }
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/hit", hit,
+    ENDPOINT("POST", "/game/{gameId}/hit", deprecatedHit,
              PATH(Int32, gameId)) {
+        return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet/{betId}/hit");
+    }
+
+    ENDPOINT("POST", "/game/{gameId}/stand", deprecatedStand,
+             PATH(Int32, gameId)) {
+        return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet/{betId}/stand");
+    }
+
+    ENDPOINT("POST", "/game/{gameId}/bet/{betId}/double", doubleBet,
+             PATH(Int32, gameId),
+             PATH(Int32, betId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
+        }
+        auto bet = game->GetBet(betId);
+        if (!bet) {
+            return createResponse(Status::CODE_404, "Unable to find bet");
         }
 
         auto dto = HitResponse::createShared();
-        if (game->Hit(dto)) {
+        if (game->DoubleBet(bet, dto)) {
             GameRegistry::GetInstance().DeleteGame(gameId);
         }
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/stand", stand,
-             PATH(Int32, gameId)) {
+    ENDPOINT("POST", "/game/{gameId}/bet/{betId}/hit", hit,
+             PATH(Int32, gameId),
+             PATH(Int32, betId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
         }
+        auto bet = game->GetBet(betId);
+        if (!bet) {
+            return createResponse(Status::CODE_404, "Unable to find bet");
+        }
 
+        auto dto = HitResponse::createShared();
+        if (game->Hit(bet, dto)) {
+            GameRegistry::GetInstance().DeleteGame(gameId);
+        }
+        return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT("POST", "/game/{gameId}/bet/{betId}/stand", stand,
+             PATH(Int32, gameId),
+             PATH(Int32, betId)) {
+        auto game = GameRegistry::GetInstance().GetGame(gameId);
+        if (!game) {
+            return createResponse(Status::CODE_404, "Unable to find game");
+        }
+        auto bet = game->GetBet(betId);
+        if (!bet) {
+            return createResponse(Status::CODE_404, "Unable to find bet");
+        }
         auto dto = StandResponse::createShared();
-        if (game->Stand(dto)) {
+        if (game->Stand(bet, dto)) {
             GameRegistry::GetInstance().DeleteGame(gameId);
         }
         return createDtoResponse(Status::CODE_200, dto);

@@ -12,33 +12,41 @@ echo "Your cash: $CASH"
 
 while (( CASH > 0 )); do
 
-  GAME_ID=$(curl -s $SERVER_BASE/game -X POST -d '{"playerId": '${PLAYER_ID}', "deckId": '${DECK_ID}'}' -H 'Content-Type: application/json'|jq -r '.gameId')
+  GAME_ID=$(curl -s $SERVER_BASE/game -d '{"deckId": '${DECK_ID}'}' |jq -r '.gameId')
 
   BET_CODE=null
   while [ "$BET_CODE" != "200" ]; do
     read -p "Your bet : " BET
-    BET_RESP=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet/${BET} -X POST)
+    BET_RESP=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet -d '{"playerId": '${PLAYER_ID}', "bet": '${BET}'}')
     BET_CODE=$(echo "$BET_RESP"|tail -1)
   done
 
   # macOS compatible "tail -n -1"
   echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq
 
+  BET_ID=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.betId')
+  YOUR_TOTAL=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.yourTotal')
   RESULT=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.result')
   while [ "$RESULT" = "null" ]; do
 
-    read -p "[h]it or [s]tand : " CMD
+    if (( YOUR_TOTAL >= 9 && YOUR_TOTAL <= 11 )); then
+      read -p "[h]it, [s]tand or [d]ouble on 9,10,11 : " CMD
+    else
+      read -p "[h]it, [s]tand : " CMD
+    fi
 
     if [ "$CMD" = "h" ]; then
       CMD=hit
     elif [ "$CMD" = "s" ]; then
       CMD=stand
+    elif [ "$CMD" = "d" ]; then
+      CMD=double
     else
       CMD=
     fi
 
     if [ -n "$CMD" ]; then
-      RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/$CMD -X POST|jq)
+      RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST|jq)
 
       echo "$RESP"|jq
 

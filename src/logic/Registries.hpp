@@ -36,7 +36,7 @@ private:
     GameRegistry() {}
 
 public:
-    int CreateGame(std::shared_ptr<Player> player, std::shared_ptr<DrawDeck> drawDeck);
+    int CreateGame(std::shared_ptr<DrawDeck> drawDeck);
 
     std::shared_ptr<Game> GetGame(int id);
 
