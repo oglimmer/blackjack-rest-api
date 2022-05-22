@@ -169,7 +169,8 @@ Bet::Bet(std::shared_ptr<Player> player, int bet) :
         player(player),
         bet(bet),
         drawnCards(std::unique_ptr<DrawnCards>(new DrawnCards())),
-        betId(Rnd::GetInstance().GetEngine()()) {
+        betId(Rnd::GetInstance().GetEngine()()),
+        stand(false) {
 }
 
 std::unique_ptr<DrawnCards> &Bet::GetDrawnCards() {
@@ -224,8 +225,8 @@ void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
 
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
-        hitResponse->followAction = {};
-        hitResponse->followAction->insert(hitResponse->followAction->begin(), actions->begin(), actions->end());
+        hitResponse->followActions = {};
+        hitResponse->followActions->insert(hitResponse->followActions->begin(), actions->begin(), actions->end());
     }
 
     WrapUp();
@@ -250,8 +251,8 @@ void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse
 
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
-        hitResponse->followAction = {};
-        hitResponse->followAction->insert(hitResponse->followAction->begin(), actions->begin(), actions->end());
+        hitResponse->followActions = {};
+        hitResponse->followActions->insert(hitResponse->followActions->begin(), actions->begin(), actions->end());
     }
 
     WrapUp();
@@ -295,8 +296,8 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
 
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
-        betResponse->followAction = {};
-        betResponse->followAction->insert(betResponse->followAction->begin(), actions->begin(), actions->end());
+        betResponse->followActions = {};
+        betResponse->followActions->insert(betResponse->followActions->begin(), actions->begin(), actions->end());
     }
 
     WrapUp();
@@ -335,8 +336,8 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
 
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
-        splitResponse->followAction = {};
-        splitResponse->followAction->insert(splitResponse->followAction->begin(), actions->begin(), actions->end());
+        splitResponse->followActions = {};
+        splitResponse->followActions->insert(splitResponse->followActions->begin(), actions->begin(), actions->end());
     }
 
     auto actions2ndBet = AddFollowActions(bet2nd);

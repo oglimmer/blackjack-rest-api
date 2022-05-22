@@ -2,7 +2,7 @@
 
 set -eu
 
-SERVER_BASE=${SERVER_BASE:-http://localhost:8000}
+SERVER_BASE=${SERVER_BASE:-http://localhost:8000/v2}
 
 PLAYER_ID=$(curl -s $SERVER_BASE/player -X POST|jq -r '.playerId')
 DECK_ID=$(curl -s $SERVER_BASE/deck -X POST|jq -r '.deckId')
@@ -29,7 +29,7 @@ while (( CASH > 0 )); do
   ACTIONS_2ND=null
   BET_ID=$(echo "$BET_RESP" | jq -r '.betId')
   YOUR_TOTAL=$(echo "$BET_RESP" | jq -r '.yourTotal')
-  ACTIONS=$(echo "$BET_RESP" | jq -r '.followAction')
+  ACTIONS=$(echo "$BET_RESP" | jq -r '.followActions')
   while [ "$ACTIONS" != "null" ]; do
 
     ACTIONS=$(echo "$ACTIONS" | jq -r 'join(" or ")')
@@ -44,7 +44,7 @@ while (( CASH > 0 )); do
     fi
 
     RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST)
-    ACTIONS=$(echo "$RESP" | jq -r '.followAction')
+    ACTIONS=$(echo "$RESP" | jq -r '.followActions')
 
 #    if [ "$ACTIONS" != "null" ] && [ "$(echo "$RESP" | jq 'length')" != "1" ]; then
       echo "$RESP"|jq
@@ -77,7 +77,7 @@ while (( CASH > 0 )); do
 
       echo "$RESP"|jq
 
-      ACTIONS_2ND=$(echo "$RESP"|jq -r '.followAction')
+      ACTIONS_2ND=$(echo "$RESP"|jq -r '.followActions')
 
     done
   fi

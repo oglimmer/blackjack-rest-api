@@ -33,7 +33,7 @@ class BetResponse : public oatpp::DTO {
     DTO_FIELD(String, dealersCard);
     DTO_FIELD(Int32, yourTotal);
 
-    DTO_FIELD(Vector<String>, followAction);
+    DTO_FIELD(Vector<String>, followActions);
 
     DTO_FIELD(Int32, betId);
 };
@@ -50,7 +50,7 @@ class SplitResponse : public oatpp::DTO {
     DTO_FIELD(String, secondBetCard2);
     DTO_FIELD(Int32, secondBetTotal);
 
-    DTO_FIELD(Vector<String>, followAction);
+    DTO_FIELD(Vector<String>, followActions);
     DTO_FIELD(Vector<String>, secondBetFollowAction);
 
     DTO_FIELD(Int32, secondBetId);
@@ -63,14 +63,14 @@ class HitResponse : public oatpp::DTO {
     DTO_FIELD(String, drawnCard);
     DTO_FIELD(Int32, yourTotal);
 
-    DTO_FIELD(Vector<String>, followAction);
+    DTO_FIELD(Vector<String>, followActions);
 };
 
 class StandResponse : public oatpp::DTO {
 
     DTO_INIT(StandResponse, oatpp::DTO)
 
-    DTO_FIELD(Vector<String>, followAction); // this is always null
+    DTO_FIELD(Vector<String>, followActions); // this is always null
 };
 
 

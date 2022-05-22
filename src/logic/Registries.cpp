@@ -15,7 +15,9 @@ int DrawDeckRegistry::CreateDrawDeck() {
 std::shared_ptr<DrawDeck> DrawDeckRegistry::GetDrawDeck(int id) {
     auto lockGuard = std::lock_guard(mutex);
     auto ret = drawDecks[id];
-    ret->Use();
+    if (ret) {
+        ret->Use();
+    }
     return ret;
 }
 
@@ -46,7 +48,9 @@ int GameRegistry::CreateGame(std::shared_ptr<DrawDeck> drawDeck) {
 std::shared_ptr<Game> GameRegistry::GetGame(int id) {
     auto lockGuard = std::lock_guard(mutex);
     auto ret = games[id];
-    ret->Use();
+    if (ret) {
+        ret->Use();
+    }
     return ret;
 }
 
@@ -93,7 +97,9 @@ int PlayerRegistry::CreatePlayer() {
 std::shared_ptr<Player> PlayerRegistry::GetPlayer(int id) {
     auto lockGuard = std::lock_guard(mutex);
     auto ret = players[id];
-    ret->Use();
+    if (ret) {
+        ret->Use();
+    }
     return ret;
 }
 
@@ -114,7 +120,7 @@ void PlayerRegistry::ClearTimedout() {
 
 void runWatchThread() {
     OATPP_LOGD("runWatchThread", "Started");
-    while(true) {
+    while (true) {
         OATPP_LOGD("runWatchThread", "run....");
         PlayerRegistry::GetInstance().ClearTimedout();
         DrawDeckRegistry::GetInstance().ClearTimedout();

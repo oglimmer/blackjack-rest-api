@@ -56,11 +56,11 @@ public:
 
 public:
 
-    ENDPOINT("GET", "/", root) {
+    ENDPOINT("GET", "/v2/", root) {
         return createResponse(Status::CODE_200);
     }
 
-    ENDPOINT("POST", "/player", createPlayer) {
+    ENDPOINT("POST", "/v2/player", createPlayer) {
         auto &reg = PlayerRegistry::GetInstance();
         auto id = reg.CreatePlayer();
 
@@ -69,7 +69,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("GET", "/player/{playerId}", getPlayer, PATH(Int32, playerId)) {
+    ENDPOINT("GET", "/v2/player/{playerId}", getPlayer, PATH(Int32, playerId)) {
         auto &reg = PlayerRegistry::GetInstance();
         auto player = reg.GetPlayer(playerId);
         if (!player) {
@@ -81,7 +81,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/deck", createDrawDeck) {
+    ENDPOINT("POST", "/v2/deck", createDrawDeck) {
         auto &reg = DrawDeckRegistry::GetInstance();
         auto id = reg.CreateDrawDeck();
 
@@ -90,7 +90,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game", createGame, BODY_DTO(Object<CreateGameRequest>, createGameDto)) {
+    ENDPOINT("POST", "/v2/game", createGame, BODY_DTO(Object<CreateGameRequest>, createGameDto)) {
         auto &drawDeckReg = DrawDeckRegistry::GetInstance();
         auto &gameReg = GameRegistry::GetInstance();
         auto drawDeck = drawDeckReg.GetDrawDeck(createGameDto->deckId.getValue(-1));
@@ -106,7 +106,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/bet", placeBet,
+    ENDPOINT("POST", "/v2/game/{gameId}/bet", placeBet,
              BODY_DTO(Object < BetRequest > , betRequest),
              PATH(Int32, gameId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
@@ -124,23 +124,23 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/bet/{bet}", deprecatedBet,
+    ENDPOINT("POST", "/v2/game/{gameId}/bet/{bet}", deprecatedBet,
              PATH(Int32, gameId),
              PATH(Int32, bet)) {
         return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet with '{playerId, bet}'");
     }
 
-    ENDPOINT("POST", "/game/{gameId}/hit", deprecatedHit,
+    ENDPOINT("POST", "/v2/game/{gameId}/hit", deprecatedHit,
              PATH(Int32, gameId)) {
         return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet/{betId}/hit");
     }
 
-    ENDPOINT("POST", "/game/{gameId}/stand", deprecatedStand,
+    ENDPOINT("POST", "/v2/game/{gameId}/stand", deprecatedStand,
              PATH(Int32, gameId)) {
         return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet/{betId}/stand");
     }
 
-    ENDPOINT("POST", "/game/{gameId}/bet/{betId}/double", doubleBet,
+    ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/double", doubleBet,
              PATH(Int32, gameId),
              PATH(Int32, betId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
@@ -157,7 +157,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/bet/{betId}/split", split,
+    ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/split", split,
              PATH(Int32, gameId),
              PATH(Int32, betId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
@@ -174,7 +174,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/bet/{betId}/hit", hit,
+    ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/hit", hit,
              PATH(Int32, gameId),
              PATH(Int32, betId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
@@ -191,7 +191,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game/{gameId}/bet/{betId}/stand", stand,
+    ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/stand", stand,
              PATH(Int32, gameId),
              PATH(Int32, betId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
@@ -207,7 +207,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("GET", "/game/{gameId}/bet/{betId}", getBet,
+    ENDPOINT("GET", "/v2/game/{gameId}/bet/{betId}", getBet,
              PATH(Int32, gameId),
              PATH(Int32, betId)) {
         auto game = GameRegistry::GetInstance().GetGame(gameId);
