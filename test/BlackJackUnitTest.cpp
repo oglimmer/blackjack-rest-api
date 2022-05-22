@@ -1,9 +1,17 @@
 
-#include "UnitTest.hpp"
+#include "BlackJackUnitTest.hpp"
+
+
+#include "app/TestComponent.hpp"
+#include "oatpp/web/client/HttpRequestExecutor.hpp"
+
+#include "oatpp-test/web/ClientServerTestRunner.hpp"
+
 #include "logic/GameLogic.hpp"
 
 
-void testSimple() {
+
+void BlackJackUnitTest::testSimple() {
     auto drawDeck = Package::CreateDrawDeck();
 
     auto c1 = drawDeck->DrawCard();
@@ -23,7 +31,7 @@ void testSimple() {
     OATPP_ASSERT(drawnDeck->GetValue() == 31);
 }
 
-void testDoubleAce() {
+void BlackJackUnitTest::testDoubleAce() {
     auto drawDeck = Package::CreateDrawDeck();
 
     auto ace1 = drawDeck->DrawCard();
@@ -58,7 +66,7 @@ void testDoubleAce() {
     OATPP_ASSERT(drawnDeck->GetValue() == 32);
 }
 
-void testDoubleAce2() {
+void BlackJackUnitTest::testDoubleAce2() {
     auto drawDeck = Package::CreateDrawDeck();
 
     auto ace1 = drawDeck->DrawCard();
@@ -93,7 +101,7 @@ void testDoubleAce2() {
     OATPP_ASSERT(drawnDeck->GetValue() == 32);
 }
 
-void testDoubleAce3() {
+void BlackJackUnitTest::testDoubleAce3() {
     auto drawDeck = Package::CreateDrawDeck();
 
     auto ace1 = drawDeck->DrawCard();
@@ -127,3 +135,26 @@ void testDoubleAce3() {
     drawnDeck->AddCard(jack);
     OATPP_ASSERT(drawnDeck->GetValue() == 32);
 }
+
+
+void BlackJackUnitTest::onRun() {
+
+    TestComponent component;
+
+    oatpp::test::web::ClientServerTestRunner runner;
+
+    runner.run([this, &runner] {
+
+        testSimple();
+        testDoubleAce();
+        testDoubleAce2();
+        testDoubleAce3();
+
+
+    }, std::chrono::minutes(10) /* test timeout */);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+}
+
+
