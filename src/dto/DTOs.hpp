@@ -6,9 +6,9 @@
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 
-class EndResponse : public oatpp::DTO {
+class BetGetResponse : public oatpp::DTO {
 
-    DTO_INIT(EndResponse, DTO)
+    DTO_INIT(BetGetResponse, DTO)
 
     DTO_FIELD(String, dealersSecondCard);
     DTO_FIELD(Int32, dealerTotal);
@@ -24,9 +24,9 @@ class BetRequest : public oatpp::DTO {
     DTO_FIELD(Int32, bet);
 };
 
-class BetResponse : public EndResponse {
+class BetResponse : public oatpp::DTO {
 
-    DTO_INIT(BetResponse, EndResponse)
+    DTO_INIT(BetResponse, oatpp::DTO)
 
     DTO_FIELD(String, card1);
     DTO_FIELD(String, card2);
@@ -38,9 +38,27 @@ class BetResponse : public EndResponse {
     DTO_FIELD(Int32, betId);
 };
 
-class HitResponse : public EndResponse {
+class SplitResponse : public oatpp::DTO {
 
-    DTO_INIT(HitResponse, EndResponse)
+    DTO_INIT(SplitResponse, oatpp::DTO)
+
+    DTO_FIELD(String, firstBetCard1);
+    DTO_FIELD(String, firstBetCard2);
+    DTO_FIELD(Int32, firstBetTotal);
+
+    DTO_FIELD(String, secondBetCard1);
+    DTO_FIELD(String, secondBetCard2);
+    DTO_FIELD(Int32, secondBetTotal);
+
+    DTO_FIELD(Vector<String>, followAction);
+    DTO_FIELD(Vector<String>, secondBetFollowAction);
+
+    DTO_FIELD(Int32, secondBetId);
+};
+
+class HitResponse : public oatpp::DTO {
+
+    DTO_INIT(HitResponse, oatpp::DTO)
 
     DTO_FIELD(String, drawnCard);
     DTO_FIELD(Int32, yourTotal);
@@ -48,10 +66,11 @@ class HitResponse : public EndResponse {
     DTO_FIELD(Vector<String>, followAction);
 };
 
-class StandResponse : public EndResponse {
+class StandResponse : public oatpp::DTO {
 
-    DTO_INIT(StandResponse, EndResponse)
+    DTO_INIT(StandResponse, oatpp::DTO)
 
+    DTO_FIELD(Vector<String>, followAction); // this is always null
 };
 
 

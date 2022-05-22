@@ -64,6 +64,7 @@ void GameRegistry::DeleteGame(std::shared_ptr<Game> game) {
 void GameRegistry::DeleteGame(int id) {
     auto lockGuard = std::lock_guard(mutex);
     games.erase(id);
+    OATPP_LOGI("GameRegistry", "[DeleteGame] id=%d", id);
 }
 
 void GameRegistry::ClearTimedout() {
