@@ -46,9 +46,9 @@ while (( CASH > 0 )); do
     RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST)
     ACTIONS=$(echo "$RESP" | jq -r '.followActions')
 
-#    if [ "$ACTIONS" != "null" ] && [ "$(echo "$RESP" | jq 'length')" != "1" ]; then
+    if [ "$ACTIONS" != "null" ] || [ "$(echo "$RESP" | jq 'length')" != "1" ]; then
       echo "$RESP"|jq
-#    fi
+    fi
 
 
     if [ "$BET_2ND_ID" = "null" ] && [ "$(echo "$RESP"|jq -r '.secondBetId')" != "null" ]; then
@@ -75,10 +75,11 @@ while (( CASH > 0 )); do
 
       RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_2ND_ID}/$CMD -X POST)
 
-      echo "$RESP"|jq
-
       ACTIONS_2ND=$(echo "$RESP"|jq -r '.followActions')
-
+      if [ "$ACTIONS_2ND" != "null" ] || [ "$(echo "$RESP" | jq 'length')" != "1" ]; then
+        echo "$RESP"|jq
+      fi
+      
     done
   fi
 
