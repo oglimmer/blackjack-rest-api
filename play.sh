@@ -2,7 +2,7 @@
 
 set -eu
 
-SERVER_BASE=${SERVER_BASE:-http://localhost:8000/v2}
+SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
 
 PLAYER_ID=$(curl -s $SERVER_BASE/player -X POST|jq -r '.playerId')
 DECK_ID=$(curl -s $SERVER_BASE/deck -X POST|jq -r '.deckId')
