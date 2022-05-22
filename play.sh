@@ -18,11 +18,15 @@ while (( CASH > 0 )); do
   while [ "$BET_CODE" != "200" ]; do
     read -p "Your bet : " BET
     BET_RESP=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet -d '{"playerId": '${PLAYER_ID}', "bet": '${BET}'}')
+
     BET_CODE=$(echo "$BET_RESP"|tail -1)
-    BET_RESP=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r)
+    if [[ $OSTYPE == 'darwin'* ]]; then
+      BET_RESP=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r)
+    else
+      BET_RESP=$(echo "$BET_RESP" | head -n -1)
+    fi
   done
 
-  # macOS compatible "tail -n -1"
   echo "$BET_RESP" | jq
 
   BET_2ND_ID=null
