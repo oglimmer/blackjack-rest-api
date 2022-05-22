@@ -56,8 +56,14 @@ public:
 
 public:
 
+    ENDPOINT("GET", "/", rootRedirect) {
+        auto resp = createResponse(Status::CODE_301);
+        resp->putHeader("Location", "/v2/");
+        return resp;
+    }
+
     ENDPOINT("GET", "/v2/", root) {
-        return createResponse(Status::CODE_200);
+        return createResponse(Status::CODE_200, "## Create your player (do once)\ncurl https://bj.oglimmer.de/v2/player -X POST\n\n## Create a stack of cards (called deck, do this once):\ncurl https://bj.oglimmer.de/v2/deck -X POST\n\n## Check your cash:\ncurl https://bj.oglimmer.de/v2/player/${PLAYER_ID}\n\n## Start a single game (re-use player and deck)\ncurl https://bj.oglimmer.de/v2/game -d '{\"deckId\": '${DECK_ID}'}'\n\n## Put your bet on a newly started game (once per game)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet -d '{\"playerId\": '${PLAYER_ID}', \"bet\": '${BET}'}'\n\n## Either Hit (take a card, do this as long as you want more cards)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/hit -X POST\n## or Stand (finish and let the dealer draw cards):\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/stand -X POST\n## or Double (if your initial cards are 9,10,11 in total)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/double -X POST\n## or Split (if your initial cards are of the same rank)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/split -X POST\n\n## When the 'followActions' are null use this to get the end result\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}\n\nUse: https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh to play via bash!\n");
     }
 
     ENDPOINT("POST", "/v2/player", createPlayer) {

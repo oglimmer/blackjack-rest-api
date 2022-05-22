@@ -79,7 +79,7 @@ while (( CASH > 0 )); do
       if [ "$ACTIONS_2ND" != "null" ] || [ "$(echo "$RESP" | jq 'length')" != "1" ]; then
         echo "$RESP"|jq
       fi
-      
+
     done
   fi
 
