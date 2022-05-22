@@ -185,6 +185,7 @@ public:
     bool IsBetDone(std::shared_ptr<Bet> bet) const;
 
     bool AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &response) const;
+
 private:
     std::unique_ptr<std::vector<std::string>> AddFollowActions(std::shared_ptr<Bet> bet);
 

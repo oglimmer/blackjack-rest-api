@@ -18,7 +18,21 @@ API_CLIENT_INIT(CreatePlayerApiTestClient)
 
     API_CALL("POST", "/v2/player", createPlayer)
 
-    // TODO - add more client API calls here
+    API_CALL("POST", "/v2/deck", createDeck)
+
+    API_CALL("POST", "/v2/game", createGame, BODY_DTO(Object < CreateGameRequest > , createGameDto))
+
+    API_CALL("POST", "/v2/game/{gameId}/bet", createBet,
+             BODY_DTO(Object < BetRequest > , betRequest),
+             PATH(Int32, gameId))
+
+    API_CALL("POST", "/v2/game/{gameId}/bet/{betId}/stand", stand,
+             PATH(Int32, betId),
+             PATH(Int32, gameId))
+
+    API_CALL("GET", "/v2/game/{gameId}/bet/{betId}", getResult,
+             PATH(Int32, betId),
+             PATH(Int32, gameId))
 
 };
 

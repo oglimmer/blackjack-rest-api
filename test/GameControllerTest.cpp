@@ -11,47 +11,72 @@
 
 void GameControllerTest::onRun() {
 
-    /* Register test components */
     TestComponent component;
 
-    /* Create client-server test runner */
     oatpp::test::web::ClientServerTestRunner runner;
 
-    /* Add MyController endpoints to the router of the test server */
     runner.addController(std::make_shared<GameController>());
 
-    /* Run test */
     runner.run([this, &runner] {
 
-        /* Get client connection provider for Api Client */
         OATPP_COMPONENT(std::shared_ptr<oatpp::network::ClientConnectionProvider>, clientConnectionProvider);
-
-        /* Get object mapper component */
         OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper);
 
-        /* Create http request executor for Api Client */
         auto requestExecutor = oatpp::web::client::HttpRequestExecutor::createShared(clientConnectionProvider);
 
-        /* Create Test API client */
         auto client = CreatePlayerApiTestClient::createShared(requestExecutor, objectMapper);
 
-        /* Call server API */
-        /* Call root endpoint of MyController */
-        auto response = client->createPlayer();
+        auto responseCreatePlayer = client->createPlayer();
+        OATPP_ASSERT(responseCreatePlayer->getStatusCode() == 200);
+        auto messageCreatePlayer = responseCreatePlayer->readBodyToDto<oatpp::Object<CreatePlayerResponse>>(
+                objectMapper.get());
+        OATPP_ASSERT(messageCreatePlayer);
+        OATPP_ASSERT(messageCreatePlayer->playerId != -1);
+        int playerId = messageCreatePlayer->playerId;
 
-        /* Assert that server responds with 200 */
-        OATPP_ASSERT(response->getStatusCode() == 200);
+        auto responseCreateDeck = client->createDeck();
+        OATPP_ASSERT(responseCreateDeck->getStatusCode() == 200);
+        auto messageCreateDeck = responseCreateDeck->readBodyToDto<oatpp::Object<CreateDeckResponse>>(
+                objectMapper.get());
+        OATPP_ASSERT(messageCreateDeck);
+        OATPP_ASSERT(messageCreateDeck->deckId != -1);
+        int deckId = messageCreateDeck->deckId;
 
-        /* Read response body as MessageDto */
-        auto message = response->readBodyToDto<oatpp::Object<CreatePlayerResponse>>(objectMapper.get());
+        auto createGameRequest = CreateGameRequest::createShared();
+        createGameRequest->deckId = deckId;
+        auto responseCreateGame = client->createGame(createGameRequest);
+        OATPP_ASSERT(responseCreateGame->getStatusCode() == 200);
+        auto messageCreateGame = responseCreateGame->readBodyToDto<oatpp::Object<CreateGameResponse>>(
+                objectMapper.get());
+        OATPP_ASSERT(messageCreateGame);
+        OATPP_ASSERT(messageCreateGame->gameId != -1);
+        int gameId = messageCreateGame->gameId;
 
-        /* Assert that received message is as expected */
-        OATPP_ASSERT(message);
-        OATPP_ASSERT(message->playerId != -1);
+        auto betRequest = BetRequest::createShared();
+        betRequest->playerId = playerId;
+        betRequest->bet = 10;
+        auto responseBet = client->createBet(betRequest, gameId);
+        OATPP_ASSERT(responseBet->getStatusCode() == 200);
+        auto messageBet = responseBet->readBodyToDto<oatpp::Object<BetResponse>>(objectMapper.get());
+        OATPP_ASSERT(messageBet);
+        OATPP_ASSERT(messageBet->betId != -1);
+        int betId = messageBet->betId;
+
+        auto responseStand = client->stand(betId, gameId);
+        OATPP_ASSERT(responseStand->getStatusCode() == 200);
+        auto messageStand = responseStand->readBodyToDto<oatpp::Object<StandResponse>>(objectMapper.get());
+        OATPP_ASSERT(messageStand);
+        OATPP_ASSERT(messageStand->followActions == 0);
+
+        auto responseResult = client->getResult(betId, gameId);
+        OATPP_ASSERT(responseResult->getStatusCode() == 200);
+        auto messageResult = responseResult->readBodyToDto<oatpp::Object<BetGetResponse>>(objectMapper.get());
+        OATPP_ASSERT(messageResult);
+        OATPP_ASSERT(!messageResult->result->empty());
+
 
     }, std::chrono::minutes(10) /* test timeout */);
 
-    /* wait all server threads finished */
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
 }
