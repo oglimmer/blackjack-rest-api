@@ -20,7 +20,7 @@ RegularCard::RegularCard(int value, const std::string &desc) : Card(desc), value
 }
 
 void RegularCard::GetValue(std::vector<int> &result) const {
-    std::for_each(result.begin(), result.end(), [&](int& i) { i += this->value; });
+    std::for_each(result.begin(), result.end(), [&](int &i) { i += this->value; });
 }
 
 /* ***************************************** AceCard ******************************************************* */
@@ -31,8 +31,8 @@ AceCard::AceCard(const std::string &desc) : Card(desc) {
 void AceCard::GetValue(std::vector<int> &result) const {
     std::vector<int> vect1(result);
     std::vector<int> vect2(result);
-    std::for_each(vect1.begin(), vect1.end(), [&](int& i) { i += 1; });
-    std::for_each(vect2.begin(), vect2.end(), [&](int& i) { i += 11; });
+    std::for_each(vect1.begin(), vect1.end(), [&](int &i) { i += 1; });
+    std::for_each(vect2.begin(), vect2.end(), [&](int &i) { i += 11; });
     result.clear();
     result.insert(result.begin(), vect1.begin(), vect1.end());
     result.insert(result.begin(), vect2.begin(), vect2.end());
@@ -51,7 +51,7 @@ const std::vector<std::shared_ptr<Card>> &Deck::GetCards() const {
 /* ***************************************** DrawnCards ******************************************************* */
 
 int DrawnCards::GetValue() const {
-    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
         OATPP_LOGD("DrawnCards", "[GetValue] cards.size=%d", cards.size());
         std::for_each(cards.begin(), cards.end(), [&](const std::shared_ptr<Card> &card) {
             OATPP_LOGD("DrawnCards", "[GetValue] card=%s", card->GetDesc().c_str());
@@ -71,15 +71,22 @@ int DrawnCards::GetValue() const {
             smallestValueLarger21 = i;
         }
     });
-    OATPP_LOGD("DrawnCards", "[GetValue] largestValueLess22=%d, smallestValueLarger21=%d", largestValueLess22, smallestValueLarger21);
+    OATPP_LOGD("DrawnCards", "[GetValue] largestValueLess22=%d, smallestValueLarger21=%d", largestValueLess22,
+               smallestValueLarger21);
     return largestValueLess22 > 0 ? largestValueLess22 : smallestValueLarger21;
 }
+
 int DrawnCards::Size() const {
     return cards.size();
 }
+
 bool DrawnCards::Val9_10_11() const {
     int val = GetValue();
     return val >= 9 && val <= 11;
+}
+
+bool DrawnCards::IsBlackJack() const {
+    return cards.size() == 2 && GetValue() == 21;
 }
 
 /* ***************************************** DrawDeck ******************************************************* */
@@ -108,7 +115,7 @@ void DrawDeck::ReshuffleIfNeeded() {
 }
 
 bool DrawDeck::IsOutDated() const {
-    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
         OATPP_LOGD("DrawDeck", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
     }
     std::chrono::seconds later{LIFETIME_DRAWDECK};
@@ -147,13 +154,13 @@ std::shared_ptr<DrawDeck> Package::CreateDrawDeck() {
 /* ***************************************** Bet ******************************************************* */
 
 Bet::Bet(std::shared_ptr<Player> player, int bet) :
-    player(player),
-    bet(bet),
-    drawnCards( std::unique_ptr<DrawnCards>(new DrawnCards())),
-    betId(Rnd::GetInstance().GetEngine()()){
+        player(player),
+        bet(bet),
+        drawnCards(std::unique_ptr<DrawnCards>(new DrawnCards())),
+        betId(Rnd::GetInstance().GetEngine()()) {
 }
 
-std::unique_ptr<DrawnCards>& Bet::GetDrawnCards() {
+std::unique_ptr<DrawnCards> &Bet::GetDrawnCards() {
     return this->drawnCards;
 }
 
@@ -179,17 +186,25 @@ Game::Game(std::shared_ptr<DrawDeck> drawDeck) :
         drawDeck(drawDeck) {
 }
 
-bool Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse) {
+bool Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
     const auto card = drawDeck->DrawCard();
     bet->GetDrawnCards()->AddCard(card);
 
     hitResponse->drawnCard = card->GetDesc();
     hitResponse->yourTotal = bet->GetDrawnCards()->GetValue();
 
-    return CheckEnd(false, bet, hitResponse);
+    bool ended = WrapUp(false, bet, reinterpret_cast<oatpp::data::mapping::type::DTOWrapper<EndResponse> *>(&hitResponse));
+    if (!ended) {
+        auto actions = AddFollowActions(bet);
+        if (!actions->empty()) {
+            hitResponse->followAction = {};
+            hitResponse->followAction->insert(hitResponse->followAction->begin(), actions->begin(), actions->end());
+        }
+    }
+    return ended;
 }
 
-bool Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse) {
+bool Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
     if (bet->GetBet() > bet->GetPlayer()->GetCash()) {
         throw std::exception();
     }
@@ -204,21 +219,22 @@ bool Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse)
     hitResponse->drawnCard = card->GetDesc();
     hitResponse->yourTotal = bet->GetDrawnCards()->GetValue();
 
-    return CheckEnd(true, bet, hitResponse);
+    return WrapUp(true, bet, reinterpret_cast<oatpp::data::mapping::type::DTOWrapper<EndResponse> *>(&hitResponse));
 }
 
 
-bool Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper standResponse) {
-    return CheckEnd(true, bet, standResponse);
+bool Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse) {
+    return WrapUp(true, bet, reinterpret_cast<oatpp::data::mapping::type::DTOWrapper<EndResponse> *>(&standResponse));
 }
 
-bool Game::PlaceBet(int bet, std::shared_ptr<Player> player, BetResponse::Wrapper betResponse) {
-    if (bet > player->GetCash() || bet < 1) {
+bool Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wrapper &betResponse) {
+    if (betVal > player->GetCash() || betVal < 1) {
         throw std::exception();
     }
-    auto newBet = std::shared_ptr<Bet>(new Bet(player, bet));
-    this->bets.push_back(newBet);
-    player->SubCash(bet);
+
+    auto bet = std::shared_ptr<Bet>(new Bet(player, betVal));
+    this->bets.push_back(bet);
+    player->SubCash(betVal);
 
     drawnCardsDealer = std::unique_ptr<DrawnCards>(new DrawnCards());
 
@@ -235,61 +251,117 @@ bool Game::PlaceBet(int bet, std::shared_ptr<Player> player, BetResponse::Wrappe
     betResponse->card1 = c1->GetDesc();
     betResponse->card2 = c2->GetDesc();
 
-    newBet->GetDrawnCards()->AddCard(c1);
-    newBet->GetDrawnCards()->AddCard(c2);
+    bet->GetDrawnCards()->AddCard(c1);
+    bet->GetDrawnCards()->AddCard(c2);
 
-    betResponse->yourTotal = newBet->GetDrawnCards()->GetValue();
-    betResponse->betId = newBet->GetBetId();
+    betResponse->yourTotal = bet->GetDrawnCards()->GetValue();
+    betResponse->betId = bet->GetBetId();
 
-    return CheckEnd(false, newBet, betResponse);
+    bool ended = WrapUp(false, bet, reinterpret_cast<oatpp::data::mapping::type::DTOWrapper<EndResponse> *>(&betResponse));
+    if (!ended) {
+        auto actions = AddFollowActions(bet);
+        if (!actions->empty()) {
+            betResponse->followAction = {};
+            betResponse->followAction->insert(betResponse->followAction->begin(), actions->begin(), actions->end());
+        }
+    }
+    return ended;
 }
 
-bool Game::CheckEnd(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper endResponse) {
+std::unique_ptr<std::vector<std::string>> Game::AddFollowActions(std::shared_ptr<Bet> bet) {
+    auto actions = std::unique_ptr<std::vector<std::string>>(new std::vector<std::string>());
+    if (bet->GetDrawnCards()->GetValue() < 21) {
+        actions->push_back("hit");
+        actions->push_back("stand");
+        if (bet->GetDrawnCards()->Val9_10_11() && bet->GetPlayer()->GetCash() >= bet->GetBet()) {
+            actions->push_back("double");
+        }
+    }
+    return actions;
+}
+
+
+bool Game::WrapUp(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper* endResponse) {
+    AdvanceDealer(done, bet, endResponse);
+    AddResponse(done, bet, endResponse);
+    Payout(done, bet);
+    return CheckEnd(done, bet);
+}
+
+void Game::AdvanceDealer(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper* endResponse) {
     const int playerTotalValue = bet->GetDrawnCards()->GetValue();
-    if (playerTotalValue > 21) {
-        endResponse->result = "You busted!!!";
-        return true;
-    } else if (done || playerTotalValue == 21) {
-        endResponse->dealersSecondCard = dealerCardClosed->GetDesc();
+    if (playerTotalValue <= 21 && (done || playerTotalValue == 21)) {
+        (*endResponse)->dealersSecondCard = dealerCardClosed->GetDesc();
         int totalValueDealer = drawnCardsDealer->GetValue();
-        endResponse->dealersAdditionalCard = {};
-        while (totalValueDealer < 17 && !(playerTotalValue == 21 && bet->GetDrawnCards()->Size() == 2)) {
+        (*endResponse)->dealersAdditionalCard = {};
+        while (totalValueDealer < 17 && !bet->GetDrawnCards()->IsBlackJack()) {
             const auto card = drawDeck->DrawCard();
             drawnCardsDealer->AddCard(card);
             totalValueDealer = drawnCardsDealer->GetValue();
-            endResponse->dealersAdditionalCard->push_back(card->GetDesc());
+            (*endResponse)->dealersAdditionalCard->push_back(card->GetDesc());
         }
-        endResponse->dealerTotal = totalValueDealer;
-        if (playerTotalValue == 21 && bet->GetDrawnCards()->Size() == 2 && totalValueDealer == 21 && drawnCardsDealer->Size() == 2) {
-            endResponse->result = "You and the dealer have Blackjack!!";
-            bet->GetPlayer()->AddCash(1.5 * bet->GetBet());
-        } else if (playerTotalValue == 21 && bet->GetDrawnCards()->Size() == 2) {
-            endResponse->result = "You have Blackjack!!";
-            bet->GetPlayer()->AddCash(2.5 * bet->GetBet());
-        } else if (totalValueDealer == 21 && drawnCardsDealer->Size() == 2) {
-            endResponse->result = "The dealer has Blackjack!!";
+    }
+}
+
+void Game::AddResponse(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper* endResponse) const {
+    const int playerTotalValue = bet->GetDrawnCards()->GetValue();
+    if (playerTotalValue > 21) {
+        (*endResponse)->result = "You busted!!!";
+    } else if (done || playerTotalValue == 21) {
+        int totalValueDealer = drawnCardsDealer->GetValue();
+        (*endResponse)->dealerTotal = totalValueDealer;
+        if (bet->GetDrawnCards()->IsBlackJack() && drawnCardsDealer->IsBlackJack()) {
+            (*endResponse)->result = "You and the dealer have Blackjack!!";
+        } else if (bet->GetDrawnCards()->IsBlackJack()) {
+            (*endResponse)->result = "You have Blackjack!!";
+        } else if (drawnCardsDealer->IsBlackJack()) {
+            (*endResponse)->result = "The dealer has Blackjack!!";
         } else if (totalValueDealer > 21) {
-            endResponse->result = "You won!!";
+            (*endResponse)->result = "You won!!";
+        } else if (playerTotalValue > totalValueDealer) {
+            (*endResponse)->result = "You won!!";
+        } else if (playerTotalValue == totalValueDealer) {
+            (*endResponse)->result = "Tie!!";
+        } else {
+            (*endResponse)->result = "You lost!!";
+        }
+    } else if (drawnCardsDealer->IsBlackJack()) {
+        (*endResponse)->result = "The dealer has Blackjack!!";
+    }
+}
+
+void Game::Payout(bool done, std::shared_ptr<Bet> bet) const {
+    const int playerTotalValue = bet->GetDrawnCards()->GetValue();
+    if (playerTotalValue <= 21 && (done || playerTotalValue == 21)) {
+        int totalValueDealer = drawnCardsDealer->GetValue();
+        if (bet->GetDrawnCards()->IsBlackJack() && drawnCardsDealer->IsBlackJack()) {
+            bet->GetPlayer()->AddCash(1.5 * bet->GetBet());
+        } else if (bet->GetDrawnCards()->IsBlackJack()) {
+            bet->GetPlayer()->AddCash(2.5 * bet->GetBet());
+        } else if (totalValueDealer > 21) {
             bet->GetPlayer()->AddCash(2 * bet->GetBet());
         } else if (playerTotalValue > totalValueDealer) {
-            endResponse->result = "You won!!";
             bet->GetPlayer()->AddCash(2 * bet->GetBet());
         } else if (playerTotalValue == totalValueDealer) {
-            endResponse->result = "Tie!!";
             bet->GetPlayer()->AddCash(bet->GetBet());
-        } else {
-            endResponse->result = "You lost!!";
         }
+    }
+}
+
+bool Game::CheckEnd(bool done, std::shared_ptr<Bet> bet) const {
+    const int playerTotalValue = bet->GetDrawnCards()->GetValue();
+    if (playerTotalValue > 21) {
         return true;
-    } else if (drawnCardsDealer->GetValue() == 21 && drawnCardsDealer->Size() == 2) {
-        endResponse->result = "The dealer has Blackjack!!";
+    } else if (done || playerTotalValue == 21) {
+        return true;
+    } else if (drawnCardsDealer->IsBlackJack()) {
         return true;
     }
     return false;
 }
 
 bool Game::IsOutDated() const {
-    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
         OATPP_LOGD("Game", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
     }
     std::chrono::seconds later{LIFETIME_GAME};
@@ -304,7 +376,7 @@ void Game::Use() {
 
 std::shared_ptr<Bet> Game::GetBet(int betId) {
     return *std::find_if(bets.begin(), bets.end(),
-                            [&](const std::shared_ptr<Bet> &m) -> bool { return m->GetBetId() == betId; });
+                         [&](const std::shared_ptr<Bet> &m) -> bool { return m->GetBetId() == betId; });
 }
 
 /* ***************************************** Player ******************************************************* */
@@ -325,7 +397,7 @@ void Player::AddCash(int bet) {
 }
 
 bool Player::IsOutDated() const {
-    if(oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
         OATPP_LOGD("Player", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
     }
     std::chrono::seconds later{LIFETIME_PLAYER};

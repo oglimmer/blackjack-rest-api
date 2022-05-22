@@ -33,6 +33,8 @@ class BetResponse : public EndResponse {
     DTO_FIELD(String, dealersCard);
     DTO_FIELD(Int32, yourTotal);
 
+    DTO_FIELD(Vector<String>, followAction);
+
     DTO_FIELD(Int32, betId);
 };
 
@@ -43,6 +45,7 @@ class HitResponse : public EndResponse {
     DTO_FIELD(String, drawnCard);
     DTO_FIELD(Int32, yourTotal);
 
+    DTO_FIELD(Vector<String>, followAction);
 };
 
 class StandResponse : public EndResponse {
@@ -61,8 +64,8 @@ class GetPlayerResponse : public oatpp::DTO {
 
 
 
-class CreateGameDto : public oatpp::DTO {
-    DTO_INIT(CreateGameDto, DTO)
+class CreateGameRequest : public oatpp::DTO {
+    DTO_INIT(CreateGameRequest, DTO)
     DTO_FIELD(Int32, deckId);
 };
 

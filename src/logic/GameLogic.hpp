@@ -70,6 +70,7 @@ public:
     int GetValue() const;
     int Size() const;
     bool Val9_10_11() const;
+    bool IsBlackJack() const;
 };
 
 class DrawDeck : public Deck {
@@ -148,17 +149,22 @@ private:
     std::vector<std::shared_ptr<Bet>> bets;
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
-    bool PlaceBet(int _bet, std::shared_ptr<Player> player, BetResponse::Wrapper betResponse);
+    bool PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wrapper &betResponse);
     std::shared_ptr<Bet> GetBet(int betId);
 
-    bool Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse);
-    bool Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper standResponse);
-    bool DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper hitResponse);
+    bool Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse);
+    bool Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse);
+    bool DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse);
 
     bool IsOutDated() const;
     void Use();
 private:
-    bool CheckEnd(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper endResponse);
+    std::unique_ptr<std::vector<std::string>> AddFollowActions(std::shared_ptr<Bet> bet);
+    bool WrapUp(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper* endResponse);
+    void AdvanceDealer(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper* endResponse);
+    void AddResponse(bool done, std::shared_ptr<Bet> bet, EndResponse::Wrapper* endResponse) const;
+    void Payout(bool done, std::shared_ptr<Bet> bet) const;
+    bool CheckEnd(bool done, std::shared_ptr<Bet> bet) const;
 };
 
 

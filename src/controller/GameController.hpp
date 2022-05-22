@@ -90,7 +90,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/game", createGame, BODY_DTO(Object < CreateGameDto > , createGameDto)) {
+    ENDPOINT("POST", "/game", createGame, BODY_DTO(Object<CreateGameRequest>, createGameDto)) {
         auto &drawDeckReg = DrawDeckRegistry::GetInstance();
         auto &gameReg = GameRegistry::GetInstance();
         auto drawDeck = drawDeckReg.GetDrawDeck(createGameDto->deckId.getValue(-1));

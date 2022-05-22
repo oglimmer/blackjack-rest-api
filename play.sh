@@ -26,14 +26,11 @@ while (( CASH > 0 )); do
 
   BET_ID=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.betId')
   YOUR_TOTAL=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.yourTotal')
+  ACTIONS=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.followAction | join(" or ")')
   RESULT=$(echo "$BET_RESP" | tail -r | tail -n +2 | tail -r | jq -r '.result')
   while [ "$RESULT" = "null" ]; do
 
-    if (( YOUR_TOTAL >= 9 && YOUR_TOTAL <= 11 )); then
-      read -p "[h]it, [s]tand or [d]ouble on 9,10,11 : " CMD
-    else
-      read -p "[h]it, [s]tand : " CMD
-    fi
+    read -p "Do you want to ${ACTIONS}? : " CMD
 
     if [ "$CMD" = "h" ]; then
       CMD=hit
@@ -41,8 +38,6 @@ while (( CASH > 0 )); do
       CMD=stand
     elif [ "$CMD" = "d" ]; then
       CMD=double
-    else
-      CMD=
     fi
 
     if [ -n "$CMD" ]; then
