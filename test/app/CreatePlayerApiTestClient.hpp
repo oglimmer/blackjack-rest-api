@@ -16,7 +16,7 @@ class CreatePlayerApiTestClient : public oatpp::web::client::ApiClient {
 
 API_CLIENT_INIT(CreatePlayerApiTestClient)
 
-    API_CALL("POST", "/player", createPlayer)
+    API_CALL("POST", "/v2/player", createPlayer)
 
     // TODO - add more client API calls here
 
