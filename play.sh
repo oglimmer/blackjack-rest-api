@@ -37,17 +37,30 @@ while (( CASH > 0 )); do
   while [ "$ACTIONS" != "null" ]; do
 
     ACTIONS=$(echo "$ACTIONS" | jq -r 'join(" or ")')
-    read -p "Do you want to ${ACTIONS}? : " CMD
 
-    if [ "$CMD" = "h" ]; then
-      CMD=hit
-    elif [ "$CMD" = "s" ]; then
-      CMD=stand
-    elif [ "$CMD" = "d" ]; then
-      CMD=double
-    fi
+    RESP_CODE=null
+    while [ "$RESP_CODE" != "200" ]; do
 
-    RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST)
+      read -p "Do you want to ${ACTIONS}? : " CMD
+
+      if [ "$CMD" = "h" ]; then
+        CMD=hit
+      elif [ "$CMD" = "s" ]; then
+        CMD=stand
+      elif [ "$CMD" = "d" ]; then
+        CMD=double
+      fi
+
+      RESP_RAW=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST)
+
+      RESP_CODE=$(echo "$RESP_RAW"|tail -1)
+      if [[ $OSTYPE == 'darwin'* ]]; then
+        RESP=$(echo "$RESP_RAW" | tail -r | tail -n +2 | tail -r)
+      else
+        RESP=$(echo "$RESP_RAW" | head -n -1)
+      fi
+    done;
+
     ACTIONS=$(echo "$RESP" | jq -r '.followActions')
 
     if [ "$ACTIONS" != "null" ] || [ "$(echo "$RESP" | jq 'length')" != "1" ]; then
@@ -62,22 +75,35 @@ while (( CASH > 0 )); do
 
   done
 
-  #echo "BET_2ND_ID = $BET_2ND_ID // ACTIONS_2ND = $ACTIONS_2ND"
+  
   if [ "$BET_2ND_ID" != "null" ]; then
     while [ "$ACTIONS_2ND" != "null" ]; do
 
       ACTIONS_2ND=$(echo "$ACTIONS_2ND" | jq -r 'join(" or ")')
-      read -p "For your 2nd bet, do you want to ${ACTIONS_2ND}? : " CMD
 
-      if [ "$CMD" = "h" ]; then
-        CMD=hit
-      elif [ "$CMD" = "s" ]; then
-        CMD=stand
-      elif [ "$CMD" = "d" ]; then
-        CMD=double
-      fi
+      RESP_CODE=null
+      while [ "$RESP_CODE" != "200" ]; do
 
-      RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_2ND_ID}/$CMD -X POST)
+        read -p "For your 2nd bet, do you want to ${ACTIONS_2ND}? : " CMD
+
+        if [ "$CMD" = "h" ]; then
+          CMD=hit
+        elif [ "$CMD" = "s" ]; then
+          CMD=stand
+        elif [ "$CMD" = "d" ]; then
+          CMD=double
+        fi
+
+        RESP_RAW=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet/${BET_2ND_ID}/$CMD -X POST)
+
+        RESP_CODE=$(echo "$RESP_RAW"|tail -1)
+        if [[ $OSTYPE == 'darwin'* ]]; then
+          RESP=$(echo "$RESP_RAW" | tail -r | tail -n +2 | tail -r)
+        else
+          RESP=$(echo "$RESP_RAW" | head -n -1)
+        fi
+
+      done
 
       ACTIONS_2ND=$(echo "$RESP"|jq -r '.followActions')
       if [ "$ACTIONS_2ND" != "null" ] || [ "$(echo "$RESP" | jq 'length')" != "1" ]; then
