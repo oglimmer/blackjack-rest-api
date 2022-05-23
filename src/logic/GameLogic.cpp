@@ -1,6 +1,8 @@
 
 #include "GameLogic.hpp"
 
+#include <cstdarg>
+
 #define LIFETIME_GAME 3600
 #define LIFETIME_PLAYER 3600
 #define LIFETIME_DRAWDECK 3600
