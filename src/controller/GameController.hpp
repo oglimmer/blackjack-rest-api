@@ -158,6 +158,9 @@ public:
         if (!bet) {
             return createResponse(Status::CODE_404, "Unable to find bet");
         }
+        if (bet->GetStand()) {
+            return createResponse(Status::CODE_404, "Bet already finished");
+        }
 
         auto dto = HitResponse::createShared();
         game->DoubleBet(bet, dto);
@@ -174,6 +177,9 @@ public:
         auto bet = game->GetBet(betId);
         if (!bet) {
             return createResponse(Status::CODE_404, "Unable to find bet");
+        }
+        if (bet->GetStand()) {
+            return createResponse(Status::CODE_404, "Bet already finished");
         }
 
         auto dto = SplitResponse::createShared();
@@ -192,6 +198,9 @@ public:
         if (!bet) {
             return createResponse(Status::CODE_404, "Unable to find bet");
         }
+        if (bet->GetStand()) {
+            return createResponse(Status::CODE_404, "Bet already finished");
+        }
 
         auto dto = HitResponse::createShared();
         game->Hit(bet, dto);
@@ -209,8 +218,31 @@ public:
         if (!bet) {
             return createResponse(Status::CODE_404, "Unable to find bet");
         }
+        if (bet->GetStand()) {
+            return createResponse(Status::CODE_404, "Bet already finished");
+        }
         auto dto = StandResponse::createShared();
         game->Stand(bet, dto);
+        return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/insurance", insurance,
+             PATH(Int32, gameId),
+             PATH(Int32, betId),
+             BODY_DTO(Object < InsuranceRequest > , insuranceRequest)) {
+        auto game = GameRegistry::GetInstance().GetGame(gameId);
+        if (!game) {
+            return createResponse(Status::CODE_404, "Unable to find game");
+        }
+        auto bet = game->GetBet(betId);
+        if (!bet) {
+            return createResponse(Status::CODE_404, "Unable to find bet");
+        }
+        std::string buyInsurance = insuranceRequest->insurance;
+        std::transform(buyInsurance.begin(), buyInsurance.end(), buyInsurance.begin(), ::tolower);
+        bool bInsurance = buyInsurance == "true" || buyInsurance == "yes" || buyInsurance == "y";
+        auto dto = StandResponse::createShared();
+        game->Insurance(bInsurance, bet, dto);
         return createDtoResponse(Status::CODE_200, dto);
     }
 

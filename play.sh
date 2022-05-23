@@ -51,9 +51,16 @@ while (( CASH > 0 )); do
         CMD=double
       fi
 
-      RESP_RAW=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST)
+      if [ "$ACTIONS" = "insurance" ]; then
+        RESP_RAW=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{"insurance": "'$CMD'"}')
+      else
+        RESP_RAW=$(curl --write-out '\n%{http_code}' -s --output - $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/$CMD -X POST)
+      fi
 
       RESP_CODE=$(echo "$RESP_RAW"|tail -1)
+      if [ "$RESP_CODE" != "200" ]; then
+        echo "FAILED http = $RESP_CODE"
+      fi
       if [[ $OSTYPE == 'darwin'* ]]; then
         RESP=$(echo "$RESP_RAW" | tail -r | tail -n +2 | tail -r)
       else

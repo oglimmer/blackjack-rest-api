@@ -5,7 +5,21 @@ docker build --tag blackjack .
 docker run --rm -p 8000:8000 blackjack
 ```
 
-Now use `./play.sh`.
+Now use `SERVER_BASE=http://localhost:8000/v2 ./play.sh`.
+
+# Play against the official server bj.oglimmer.de
+
+If you have Docker installed you can play via:
+
+```bash
+docker run -it --rm livepeerci/curl-jq bash -c "$(curl -sfLS https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh)"
+```
+
+To play on your local terminal, you need to have curl and jq installed.
+
+```bash
+bash -c "$(curl -sfLS https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh)"
+```
 
 # Build
 
@@ -28,7 +42,7 @@ build/blackjack-exe
 To play (and thus test the server)
 
 ```bash
-./play.sh
+SERVER_BASE=http://localhost:8000/v2 ./play.sh
 ```
 
 # How to play via curl
@@ -49,13 +63,17 @@ curl https://bj.oglimmer.de/v2/game -d '{"deckId": '${DECK_ID}'}'
 curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet -d '{"playerId": '${PLAYER_ID}', "bet": '${BET}'}'
 
 ## Either Hit (take a card, do this as long as you want more cards)
-curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/hit -X POST
+curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/hit -X POST
 ## or Stand (finish and let the dealer draw cards):
-curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/stand -X POST
+curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/stand -X POST
 ## or Double (if your initial cards are 9,10,11 in total)
-curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/double -X POST
+curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/double -X POST
 ## or Split (if your initial cards are of the same rank)
-curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}/split -X POST
+curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/split -X POST
+## when the dealer has an Ace on the first card, you are asked for an insurance:
+curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{"insurance": "${yes|no}"}'
 
 ## When the 'followActions' are null use this to get the end result
-curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/{betId}
+curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}
+
+Use: https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh to play via bash! (needs curl and jq installed)

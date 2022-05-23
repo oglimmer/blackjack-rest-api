@@ -23,6 +23,10 @@ void RegularCard::GetValue(std::vector<int> &result) const {
     std::for_each(result.begin(), result.end(), [&](int &i) { i += this->value; });
 }
 
+int RegularCard::GetRank() const {
+    return this->value;
+}
+
 /* ***************************************** AceCard ******************************************************* */
 
 AceCard::AceCard(const std::string &desc) : Card(desc) {
@@ -38,6 +42,10 @@ void AceCard::GetValue(std::vector<int> &result) const {
     result.insert(result.begin(), vect2.begin(), vect2.end());
 }
 
+int AceCard::GetRank() const {
+    return 11;
+}
+
 /* ***************************************** Deck ******************************************************* */
 
 void Deck::AddCard(const std::shared_ptr<Card> card) {
@@ -50,6 +58,7 @@ const std::vector<std::shared_ptr<Card>> &Deck::GetCards() const {
 
 const std::shared_ptr<Card> Deck::DrawCard() {
     std::shared_ptr<Card> topCard = cards.back();
+    OATPP_LOGI("Deck", "[DrawCard] Drew = %s", topCard->GetDesc().c_str());
     cards.pop_back();
     return topCard;
 }
@@ -96,15 +105,7 @@ bool DrawnCards::IsBlackJack() const {
 }
 
 bool DrawnCards::IsSimplePair() const {
-    if (cards.size() != 2) {
-        return false;
-    }
-    std::vector<int> card0Val, card1Val;
-    card0Val.push_back(0);
-    card1Val.push_back(0);
-    cards[0]->GetValue(card0Val);
-    cards[1]->GetValue(card1Val);
-    return card0Val[0] == card1Val[0];
+    return cards.size() == 2 && cards[0]->GetRank() == cards[1]->GetRank();
 }
 
 /* ***************************************** DrawDeck ******************************************************* */
@@ -115,11 +116,13 @@ void DrawDeck::AddCard(const std::shared_ptr<Card> card) {
 }
 
 void DrawDeck::shuffle() {
-    std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
+    if (!Package::GetInstance().IsCheat()) {
+        std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
+    }
 }
 
 void DrawDeck::ReshuffleIfNeeded() {
-    if (cards.size() < 52) {
+    if (cards.size() < 52 && !Package::GetInstance().IsCheat()) {
         cards.clear();
         cards.insert(cards.end(), allCards.begin(), allCards.end());
         std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
@@ -143,24 +146,50 @@ void DrawDeck::Use() {
 /* ***************************************** Package ******************************************************* */
 
 void Package::Add52Cards(std::shared_ptr<DrawDeck> drawDeck) {
-    const std::string suits[] = {"Hearts", "Spades", "Diamonds", "Clubs"};
     for (int j = 0; j < 4; j++) {
         for (int i = 2; i < 11; i++) {
-            drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(i, std::to_string(i) + "-of-" + suits[j])));
+            drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(i, std::to_string(i) + "-of-" + SUITES[j])));
         }
-        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "Jack-of-" + suits[j])));
-        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "Queen-of-" + suits[j])));
-        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "King-of-" + suits[j])));
-        drawDeck->AddCard(std::shared_ptr<Card>(new AceCard("Ace-of-" + suits[j])));
+        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "Jack-of-" + SUITES[j])));
+        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "Queen-of-" + SUITES[j])));
+        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "King-of-" + SUITES[j])));
+        drawDeck->AddCard(std::shared_ptr<Card>(new AceCard("Ace-of-" + SUITES[j])));
     }
 }
 
 std::shared_ptr<DrawDeck> Package::CreateDrawDeck() {
     auto newDrawDeck = std::shared_ptr<DrawDeck>(new DrawDeck());
-    for (int i = 0; i < 6; i++) {
-        Add52Cards(newDrawDeck);
+    if (IsCheat()) {
+        std::for_each(deckDefintion.begin(), deckDefintion.end(), [&](int rank) {
+            OATPP_LOGI("Package", "[CreateDrawDeck] Cheat Add Card = %d", rank);
+            std::shared_ptr<Card> card;
+            if (rank == 11) {
+                card = std::shared_ptr<Card>(new AceCard("11-of-" + SUITES[0]));
+            } else {
+                card = std::shared_ptr<Card>(new RegularCard(rank, std::to_string(rank) + "-of-" + SUITES[0]));
+            }
+            newDrawDeck->AddCard(card);
+        });
+    } else {
+        for (int i = 0; i < 6; i++) {
+            Add52Cards(newDrawDeck);
+        }
     }
     return newDrawDeck;
+}
+
+void Package::Cheat(int ranksCount, ...) {
+    this->deckDefintion.clear();
+    va_list vl;
+    va_start(vl, ranksCount);
+    for (int i = 0; i < ranksCount; i++) {
+        this->deckDefintion.insert(this->deckDefintion.begin(), va_arg(vl, int));
+    }
+    va_end(vl);
+}
+
+bool Package::IsCheat() const {
+    return !deckDefintion.empty();
 }
 
 /* ***************************************** Bet ******************************************************* */
@@ -205,14 +234,38 @@ bool Bet::IsDone() const {
     return this->stand || drawnCards->GetValue() >= 21;
 }
 
+bool Bet::IsAskedForInsurance() const {
+    return this->isAskedForInsurance;
+}
+
+void Bet::SetAskedForInsurance(bool b) {
+    this->isAskedForInsurance = b;
+}
+
+bool Bet::IsInsuranceBought() const {
+    return this->isInsuranceBought;
+}
+
+void Bet::SetInsuranceBought(bool b) {
+    this->isInsuranceBought = b;
+}
 
 /* ***************************************** Game ******************************************************* */
 
 Game::Game(std::shared_ptr<DrawDeck> drawDeck) :
-        drawDeck(drawDeck) {
+        drawDeck(drawDeck),
+        drawnCardsDealer(std::unique_ptr<DrawnCards>(new DrawnCards())),
+        dealerCardOpen(drawDeck->DrawCard()),
+        dealerCardClosed(drawDeck->DrawCard()) {
+    drawnCardsDealer->AddCard(dealerCardOpen);
+    drawnCardsDealer->AddCard(dealerCardClosed);
 }
 
 void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
+    if (!IsFollowActionsAllowed(bet, "hit")) {
+        throw std::exception();
+    }
+
     const auto card = drawDeck->DrawCard();
     bet->GetDrawnCards()->AddCard(card);
 
@@ -223,13 +276,13 @@ void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
         bet->SetStand(true);
     }
 
+    WrapUp();
+
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
         hitResponse->followActions = {};
         hitResponse->followActions->insert(hitResponse->followActions->begin(), actions->begin(), actions->end());
     }
-
-    WrapUp();
 }
 
 void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
@@ -239,6 +292,10 @@ void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse
     if (!bet->GetDrawnCards()->Simple9_10_11()) {
         throw std::exception();
     }
+    if (!IsFollowActionsAllowed(bet, "double")) {
+        throw std::exception();
+    }
+
     bet->GetPlayer()->SubCash(bet->GetBet());
     bet->IncBet(bet->GetBet());
     const auto card = drawDeck->DrawCard();
@@ -249,17 +306,20 @@ void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse
 
     bet->SetStand(true);
 
+    WrapUp();
+
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
         hitResponse->followActions = {};
         hitResponse->followActions->insert(hitResponse->followActions->begin(), actions->begin(), actions->end());
     }
-
-    WrapUp();
 }
 
 
 void Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse) {
+    if (!IsFollowActionsAllowed(bet, "stand")) {
+        throw std::exception();
+    }
     bet->SetStand(true);
     WrapUp();
 }
@@ -273,14 +333,7 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
     this->bets.push_back(bet);
     player->SubCash(betVal);
 
-    drawnCardsDealer = std::unique_ptr<DrawnCards>(new DrawnCards());
-
-    auto dealerCardOpen = drawDeck->DrawCard();
-    dealerCardClosed = drawDeck->DrawCard();
     betResponse->dealersCard = dealerCardOpen->GetDesc();
-
-    drawnCardsDealer->AddCard(dealerCardOpen);
-    drawnCardsDealer->AddCard(dealerCardClosed);
 
     const auto c1 = drawDeck->DrawCard();
     const auto c2 = drawDeck->DrawCard();
@@ -294,13 +347,13 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
     betResponse->yourTotal = bet->GetDrawnCards()->GetValue();
     betResponse->betId = bet->GetBetId();
 
+    WrapUp();
+
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
         betResponse->followActions = {};
         betResponse->followActions->insert(betResponse->followActions->begin(), actions->begin(), actions->end());
     }
-
-    WrapUp();
 }
 
 void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse) {
@@ -308,6 +361,9 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
         throw std::exception();
     }
     if (!bet->GetDrawnCards()->IsSimplePair() || bets.size() != 1) {
+        throw std::exception();
+    }
+    if (!IsFollowActionsAllowed(bet, "split")) {
         throw std::exception();
     }
 
@@ -334,6 +390,8 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
     splitResponse->secondBetCard2 = bet2nd->GetDrawnCards()->GetCards()[1]->GetDesc();
     splitResponse->secondBetTotal = bet2nd->GetDrawnCards()->GetValue();
 
+    WrapUp();
+
     auto actions = AddFollowActions(bet);
     if (!actions->empty()) {
         splitResponse->followActions = {};
@@ -346,20 +404,49 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
         splitResponse->secondBetFollowAction->insert(splitResponse->secondBetFollowAction->begin(),
                                                      actions2ndBet->begin(), actions2ndBet->end());
     }
+}
+
+void Game::Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse) {
+    if (!IsFollowActionsAllowed(bet, "insurance")) {
+        throw std::exception();
+    }
+
+    bet->SetAskedForInsurance(true);
+    bet->SetInsuranceBought(insurance);
+    if (insurance) {
+        bet->GetPlayer()->SubCash(bet->GetBet() * 0.5);
+    }
 
     WrapUp();
+
+    auto actions = AddFollowActions(bet);
+    if (!actions->empty()) {
+        standResponse->followActions = {};
+        standResponse->followActions->insert(standResponse->followActions->begin(), actions->begin(), actions->end());
+    }
+}
+
+bool Game::IsFollowActionsAllowed(std::shared_ptr<Bet> bet, std::string action) {
+    auto allowedActions = AddFollowActions(bet);
+    return std::find(allowedActions->begin(), allowedActions->end(), action) != allowedActions->end();
 }
 
 std::unique_ptr<std::vector<std::string>> Game::AddFollowActions(std::shared_ptr<Bet> bet) {
     auto actions = std::unique_ptr<std::vector<std::string>>(new std::vector<std::string>());
     if (bet->GetDrawnCards()->GetValue() < 21 && !bet->GetStand()) {
-        actions->push_back("hit");
-        actions->push_back("stand");
-        if (bet->GetDrawnCards()->Simple9_10_11() && bet->GetPlayer()->GetCash() >= bet->GetBet()) {
-            actions->push_back("double");
-        }
-        if (bet->GetDrawnCards()->IsSimplePair() && bets.size() == 1) {
-            actions->push_back("split");
+        if (dealerCardOpen->GetRank() == 11 && !bet->IsAskedForInsurance() &&
+            bet->GetPlayer()->GetCash() >= bet->GetBet() * 0.5) {
+            actions->push_back("insurance");
+        } else {
+            actions->push_back("hit");
+            actions->push_back("stand");
+            if (bet->GetDrawnCards()->Simple9_10_11() && bet->GetPlayer()->GetCash() >= bet->GetBet()) {
+                actions->push_back("double");
+            }
+            if (bet->GetDrawnCards()->IsSimplePair() && bets.size() == 1 &&
+                bet->GetPlayer()->GetCash() >= bet->GetBet()) {
+                actions->push_back("split");
+            }
         }
     }
     return actions;
@@ -367,6 +454,14 @@ std::unique_ptr<std::vector<std::string>> Game::AddFollowActions(std::shared_ptr
 
 
 void Game::WrapUp() {
+    if (drawnCardsDealer->IsBlackJack()) {
+        if (dealerCardOpen->GetRank() == 11 && bets[0]->IsAskedForInsurance()) {
+            bets[0]->SetStand(true);
+        }
+        if (dealerCardClosed->GetRank() == 11) {
+            bets[0]->SetStand(true);
+        }
+    }
     if (IsDone()) {
         AdvanceDealer();
         Payout();
@@ -427,7 +522,7 @@ void Game::Payout(std::shared_ptr<Bet> bet) const {
     if (playerTotalValue <= 21) {
         int totalValueDealer = drawnCardsDealer->GetValue();
         if (bet->GetDrawnCards()->IsBlackJack() && drawnCardsDealer->IsBlackJack()) {
-            bet->GetPlayer()->AddCash(1.5 * bet->GetBet());
+            bet->GetPlayer()->AddCash(bet->GetBet());
         } else if (bet->GetDrawnCards()->IsBlackJack()) {
             bet->GetPlayer()->AddCash(2.5 * bet->GetBet());
         } else if (totalValueDealer > 21 || playerTotalValue > totalValueDealer) {
@@ -435,12 +530,16 @@ void Game::Payout(std::shared_ptr<Bet> bet) const {
         } else if (playerTotalValue == totalValueDealer) {
             bet->GetPlayer()->AddCash(bet->GetBet());
         }
+        // side bet
+        if (drawnCardsDealer->IsBlackJack() && bet->IsInsuranceBought()) {
+            bet->GetPlayer()->AddCash(1.5 * bet->GetBet());
+        }
     }
 }
 
 bool Game::IsDone() const {
     auto it = std::find_if(bets.begin(), bets.end(),
-                           [&](const std::shared_ptr<Bet> &bet) -> bool { return !IsBetDone(bet); });
+                           [&](const std::shared_ptr<Bet> &bet) -> bool { return !bet->IsDone(); });
     OATPP_LOGI("Game", "[IsDone] ret = %d", it == bets.end());
     return it == bets.end();
 }
@@ -464,12 +563,6 @@ std::shared_ptr<Bet> Game::GetBet(int betId) {
                          [&](const std::shared_ptr<Bet> &m) -> bool { return m->GetBetId() == betId; });
 }
 
-bool Game::IsBetDone(std::shared_ptr<Bet> bet) const {
-    OATPP_LOGI("Game", "[IsBetDone] bet->IsDone() = %d", bet->IsDone());
-    OATPP_LOGI("Game", "[IsBetDone] drawnCardsDealer->IsBlackJack() = %d", drawnCardsDealer->IsBlackJack());
-    return bet->IsDone() || drawnCardsDealer->IsBlackJack();
-}
-
 
 /* ***************************************** Player ******************************************************* */
 
@@ -485,6 +578,7 @@ void Player::SubCash(int bet) {
 }
 
 void Player::AddCash(int bet) {
+    OATPP_LOGI("Player", "[AddCash] From %d add %d = %d", cash, bet, cash + bet);
     cash += bet;
 }
 

@@ -1,12 +1,14 @@
 
-#include "GameControllerTest.hpp"
+#include "GameControllerSimpleWinTest.hpp"
+#include "GameControllerDealerBlackJackTest.hpp"
 #include "BlackJackUnitTest.hpp"
 
 #include <iostream>
 
 void runTests() {
-    OATPP_RUN_TEST(GameControllerTest);
     OATPP_RUN_TEST(BlackJackUnitTest);
+    OATPP_RUN_TEST(GameControllerSimpleWinTest);
+    OATPP_RUN_TEST(GameControllerDealerBlackJackTest);
 }
 
 int main() {

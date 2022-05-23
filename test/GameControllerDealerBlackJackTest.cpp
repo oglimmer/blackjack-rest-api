@@ -1,4 +1,4 @@
-#include "GameControllerTest.hpp"
+#include "GameControllerDealerBlackJackTest.hpp"
 
 #include "controller/GameController.hpp"
 
@@ -9,13 +9,15 @@
 
 #include "oatpp-test/web/ClientServerTestRunner.hpp"
 
-void GameControllerTest::onRun() {
+void GameControllerDealerBlackJackTest::onRun() {
 
     TestComponent component;
 
     oatpp::test::web::ClientServerTestRunner runner;
 
     runner.addController(std::make_shared<GameController>());
+
+    Package::GetInstance().Cheat(4, 11, 10, 10, 10);
 
     runner.run([this, &runner] {
 
@@ -28,7 +30,7 @@ void GameControllerTest::onRun() {
 
         auto responseCreatePlayer = client->createPlayer();
         OATPP_ASSERT(responseCreatePlayer->getStatusCode() == 200);
-        auto messageCreatePlayer = responseCreatePlayer->readBodyToDto<oatpp::Object<CreatePlayerResponse>>(
+        auto messageCreatePlayer = responseCreatePlayer->readBodyToDto<oatpp::Object<CreatePlayerResponse >>(
                 objectMapper.get());
         OATPP_ASSERT(messageCreatePlayer);
         OATPP_ASSERT(messageCreatePlayer->playerId != -1);
@@ -36,7 +38,7 @@ void GameControllerTest::onRun() {
 
         auto responseCreateDeck = client->createDeck();
         OATPP_ASSERT(responseCreateDeck->getStatusCode() == 200);
-        auto messageCreateDeck = responseCreateDeck->readBodyToDto<oatpp::Object<CreateDeckResponse>>(
+        auto messageCreateDeck = responseCreateDeck->readBodyToDto<oatpp::Object<CreateDeckResponse >>(
                 objectMapper.get());
         OATPP_ASSERT(messageCreateDeck);
         OATPP_ASSERT(messageCreateDeck->deckId != -1);
@@ -46,7 +48,7 @@ void GameControllerTest::onRun() {
         createGameRequest->deckId = deckId;
         auto responseCreateGame = client->createGame(createGameRequest);
         OATPP_ASSERT(responseCreateGame->getStatusCode() == 200);
-        auto messageCreateGame = responseCreateGame->readBodyToDto<oatpp::Object<CreateGameResponse>>(
+        auto messageCreateGame = responseCreateGame->readBodyToDto<oatpp::Object<CreateGameResponse >>(
                 objectMapper.get());
         OATPP_ASSERT(messageCreateGame);
         OATPP_ASSERT(messageCreateGame->gameId != -1);
@@ -57,22 +59,19 @@ void GameControllerTest::onRun() {
         betRequest->bet = 10;
         auto responseBet = client->createBet(betRequest, gameId);
         OATPP_ASSERT(responseBet->getStatusCode() == 200);
-        auto messageBet = responseBet->readBodyToDto<oatpp::Object<BetResponse>>(objectMapper.get());
+        auto messageBet = responseBet->readBodyToDto<oatpp::Object<BetResponse >>(objectMapper.get());
         OATPP_ASSERT(messageBet);
         OATPP_ASSERT(messageBet->betId != -1);
+        OATPP_ASSERT(messageBet->yourTotal == 20);
         int betId = messageBet->betId;
-
-        auto responseStand = client->stand(betId, gameId);
-        OATPP_ASSERT(responseStand->getStatusCode() == 200);
-        auto messageStand = responseStand->readBodyToDto<oatpp::Object<StandResponse>>(objectMapper.get());
-        OATPP_ASSERT(messageStand);
-        OATPP_ASSERT(messageStand->followActions == 0);
 
         auto responseResult = client->getResult(betId, gameId);
         OATPP_ASSERT(responseResult->getStatusCode() == 200);
-        auto messageResult = responseResult->readBodyToDto<oatpp::Object<BetGetResponse>>(objectMapper.get());
+        auto messageResult = responseResult->readBodyToDto<oatpp::Object<BetGetResponse >>(objectMapper.get());
         OATPP_ASSERT(messageResult);
         OATPP_ASSERT(!messageResult->result->empty());
+        OATPP_ASSERT(messageResult->dealerTotal == 21);
+        OATPP_ASSERT(messageResult->result == "The dealer has Blackjack!!");
 
 
     }, std::chrono::minutes(10) /* test timeout */);

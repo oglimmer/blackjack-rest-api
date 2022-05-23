@@ -4,7 +4,7 @@
 /* ***************************************** DrawDeckRegistry ******************************************************* */
 
 int DrawDeckRegistry::CreateDrawDeck() {
-    auto drawDeck = Package::CreateDrawDeck();
+    auto drawDeck = Package::GetInstance().CreateDrawDeck();
     drawDeck->shuffle();
     int id = Rnd::GetInstance().GetEngine()();
     auto lockGuard = std::lock_guard(mutex);
@@ -29,7 +29,7 @@ void DrawDeckRegistry::ClearTimedout() {
             OATPP_LOGI("DrawDeckRegistry", "[ClearTimedout] erasing %d", it);
             it = drawDecks.erase(it);
         } else {
-            ++it;
+             ++it;
         }
     }
 }

@@ -11,8 +11,10 @@ class BetGetResponse : public oatpp::DTO {
     DTO_INIT(BetGetResponse, DTO)
 
     DTO_FIELD(String, dealersSecondCard);
+
     DTO_FIELD(Int32, dealerTotal);
-    DTO_FIELD(Vector<String>, dealersAdditionalCard);
+
+    DTO_FIELD(Vector < String >, dealersAdditionalCard);
 
     DTO_FIELD(String, result);
 };
@@ -21,6 +23,7 @@ class BetRequest : public oatpp::DTO {
     DTO_INIT(BetRequest, DTO)
 
     DTO_FIELD(Int32, playerId);
+
     DTO_FIELD(Int32, bet);
 };
 
@@ -29,11 +32,14 @@ class BetResponse : public oatpp::DTO {
     DTO_INIT(BetResponse, oatpp::DTO)
 
     DTO_FIELD(String, card1);
+
     DTO_FIELD(String, card2);
+
     DTO_FIELD(String, dealersCard);
+
     DTO_FIELD(Int32, yourTotal);
 
-    DTO_FIELD(Vector<String>, followActions);
+    DTO_FIELD(Vector < String >, followActions);
 
     DTO_FIELD(Int32, betId);
 };
@@ -43,15 +49,20 @@ class SplitResponse : public oatpp::DTO {
     DTO_INIT(SplitResponse, oatpp::DTO)
 
     DTO_FIELD(String, firstBetCard1);
+
     DTO_FIELD(String, firstBetCard2);
+
     DTO_FIELD(Int32, firstBetTotal);
 
     DTO_FIELD(String, secondBetCard1);
+
     DTO_FIELD(String, secondBetCard2);
+
     DTO_FIELD(Int32, secondBetTotal);
 
-    DTO_FIELD(Vector<String>, followActions);
-    DTO_FIELD(Vector<String>, secondBetFollowAction);
+    DTO_FIELD(Vector < String >, followActions);
+
+    DTO_FIELD(Vector < String >, secondBetFollowAction);
 
     DTO_FIELD(Int32, secondBetId);
 };
@@ -61,16 +72,17 @@ class HitResponse : public oatpp::DTO {
     DTO_INIT(HitResponse, oatpp::DTO)
 
     DTO_FIELD(String, drawnCard);
+
     DTO_FIELD(Int32, yourTotal);
 
-    DTO_FIELD(Vector<String>, followActions);
+    DTO_FIELD(Vector < String >, followActions);
 };
 
 class StandResponse : public oatpp::DTO {
 
     DTO_INIT(StandResponse, oatpp::DTO)
 
-    DTO_FIELD(Vector<String>, followActions); // this is always null
+    DTO_FIELD(Vector < String >, followActions); // this is always null
 };
 
 
@@ -82,25 +94,34 @@ class GetPlayerResponse : public oatpp::DTO {
 };
 
 
-
 class CreateGameRequest : public oatpp::DTO {
     DTO_INIT(CreateGameRequest, DTO)
+
     DTO_FIELD(Int32, deckId);
 };
 
 class CreateGameResponse : public oatpp::DTO {
     DTO_INIT(CreateGameResponse, DTO)
+
     DTO_FIELD(Int32, gameId);
 };
 
 class CreatePlayerResponse : public oatpp::DTO {
     DTO_INIT(CreatePlayerResponse, DTO)
+
     DTO_FIELD(Int32, playerId);
 };
 
 class CreateDeckResponse : public oatpp::DTO {
     DTO_INIT(CreateDeckResponse, DTO)
+
     DTO_FIELD(Int32, deckId);
+};
+
+class InsuranceRequest : public oatpp::DTO {
+    DTO_INIT(InsuranceRequest, DTO)
+
+    DTO_FIELD(String, insurance);
 };
 
 

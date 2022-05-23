@@ -3,10 +3,10 @@
 
 #include "oatpp-test/UnitTest.hpp"
 
-class GameControllerTest : public oatpp::test::UnitTest {
+class GameControllerSimpleWinTest : public oatpp::test::UnitTest {
 public:
 
-    GameControllerTest() : UnitTest("TEST[GameControllerTest]") {}
+    GameControllerSimpleWinTest() : UnitTest("TEST[GameControllerSimpleWinTest]") {}
 
     void onRun() override;
 

@@ -28,6 +28,8 @@ public:
     virtual void GetValue(std::vector<int> &result) const = 0;
 
     const std::string &GetDesc() const;
+
+    virtual int GetRank() const = 0;
 };
 
 class RegularCard : public Card {
@@ -42,6 +44,8 @@ public:
      * @param result number of elements will not be changed
      */
     virtual void GetValue(std::vector<int> &result) const override;
+
+    virtual int GetRank() const override;
 };
 
 class AceCard : public Card {
@@ -53,6 +57,8 @@ public:
      * @param result number of elements will be doubled
      */
     virtual void GetValue(std::vector<int> &result) const override;
+
+    virtual int GetRank() const override;
 };
 
 class Deck {
@@ -99,13 +105,22 @@ public:
 
 
 class Package {
-private:
-    Package() {}
+SINGLETON(Package)
 
-    static void Add52Cards(std::shared_ptr<DrawDeck> drawDeck);
+private:
+    const std::string SUITES[4];
+    std::vector<int> deckDefintion;
+
+    Package() : SUITES{"Hearts", "Spades", "Diamonds", "Clubs"} {}
+
+    void Add52Cards(std::shared_ptr<DrawDeck> drawDeck);
 
 public:
-    static std::shared_ptr<DrawDeck> CreateDrawDeck();
+    std::shared_ptr<DrawDeck> CreateDrawDeck();
+
+    void Cheat(int ranks, ...);
+
+    bool IsCheat() const;
 };
 
 class Player {
@@ -134,6 +149,8 @@ private:
     int bet;
     std::shared_ptr<Player> player;
     bool stand;
+    bool isAskedForInsurance;
+    bool isInsuranceBought;
 public:
     Bet(std::shared_ptr<Player> player, int bet);
 
@@ -153,6 +170,13 @@ public:
 
     bool IsDone() const;
 
+    bool IsAskedForInsurance() const;
+
+    void SetAskedForInsurance(bool b);
+
+    bool IsInsuranceBought() const;
+
+    void SetInsuranceBought(bool b);
 };
 
 class Game {
@@ -163,6 +187,7 @@ private:
     std::shared_ptr<DrawDeck> drawDeck;
     std::unique_ptr<DrawnCards> drawnCardsDealer;
     std::shared_ptr<Card> dealerCardClosed;
+    std::shared_ptr<Card> dealerCardOpen;
     std::vector<std::shared_ptr<Bet>> bets;
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
@@ -178,16 +203,18 @@ public:
 
     void Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse);
 
+    void Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse);
+
     bool IsOutDated() const;
 
     void Use();
-
-    bool IsBetDone(std::shared_ptr<Bet> bet) const;
 
     bool AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &response) const;
 
 private:
     std::unique_ptr<std::vector<std::string>> AddFollowActions(std::shared_ptr<Bet> bet);
+
+    bool IsFollowActionsAllowed(std::shared_ptr<Bet> bet, std::string action);
 
     void WrapUp();
 

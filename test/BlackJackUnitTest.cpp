@@ -10,9 +10,8 @@
 #include "logic/GameLogic.hpp"
 
 
-
 void BlackJackUnitTest::testSimple() {
-    auto drawDeck = Package::CreateDrawDeck();
+    auto drawDeck = Package::GetInstance().CreateDrawDeck();
 
     auto c1 = drawDeck->DrawCard();
     auto c2 = drawDeck->DrawCard();
@@ -32,7 +31,7 @@ void BlackJackUnitTest::testSimple() {
 }
 
 void BlackJackUnitTest::testDoubleAce() {
-    auto drawDeck = Package::CreateDrawDeck();
+    auto drawDeck = Package::GetInstance().CreateDrawDeck();
 
     auto ace1 = drawDeck->DrawCard();
     drawDeck->DrawCard();
@@ -67,7 +66,7 @@ void BlackJackUnitTest::testDoubleAce() {
 }
 
 void BlackJackUnitTest::testDoubleAce2() {
-    auto drawDeck = Package::CreateDrawDeck();
+    auto drawDeck = Package::GetInstance().CreateDrawDeck();
 
     auto ace1 = drawDeck->DrawCard();
     drawDeck->DrawCard();
@@ -102,7 +101,7 @@ void BlackJackUnitTest::testDoubleAce2() {
 }
 
 void BlackJackUnitTest::testDoubleAce3() {
-    auto drawDeck = Package::CreateDrawDeck();
+    auto drawDeck = Package::GetInstance().CreateDrawDeck();
 
     auto ace1 = drawDeck->DrawCard();
     drawDeck->DrawCard();
@@ -142,6 +141,8 @@ void BlackJackUnitTest::onRun() {
     TestComponent component;
 
     oatpp::test::web::ClientServerTestRunner runner;
+
+    Package::GetInstance().Cheat(0);
 
     runner.run([this, &runner] {
 
