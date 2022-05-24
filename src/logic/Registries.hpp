@@ -57,7 +57,7 @@ private:
     PlayerRegistry() {}
 
 public:
-    int CreatePlayer();
+    void CreatePlayer(std::shared_ptr<Player> player);
 
     std::shared_ptr<Player> GetPlayer(int id);
 
@@ -73,6 +73,7 @@ private:
     std::unique_ptr<std::thread> watchThread = std::unique_ptr<std::thread>(new std::thread(runWatchThread));
 
     TimeoutCleaner() {}
+
 public:
 
 

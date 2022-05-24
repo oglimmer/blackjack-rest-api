@@ -1,198 +1,9 @@
 
 #include "GameLogic.hpp"
-
-#include <cstdarg>
+#include "HighscoreList.hpp"
 
 #define LIFETIME_GAME 3600
 #define LIFETIME_PLAYER 3600
-#define LIFETIME_DRAWDECK 3600
-
-/* ***************************************** Card ******************************************************* */
-
-Card::Card(const std::string &desc) : desc(desc) {
-}
-
-const std::string &Card::GetDesc() const {
-    return this->desc;
-}
-
-/* ***************************************** RegularCard ******************************************************* */
-
-RegularCard::RegularCard(int value, const std::string &desc) : Card(desc), value(value) {
-}
-
-void RegularCard::GetValue(std::vector<int> &result) const {
-    std::for_each(result.begin(), result.end(), [&](int &i) { i += this->value; });
-}
-
-int RegularCard::GetRank() const {
-    return this->value;
-}
-
-/* ***************************************** AceCard ******************************************************* */
-
-AceCard::AceCard(const std::string &desc) : Card(desc) {
-}
-
-void AceCard::GetValue(std::vector<int> &result) const {
-    std::vector<int> vect1(result);
-    std::vector<int> vect2(result);
-    std::for_each(vect1.begin(), vect1.end(), [&](int &i) { i += 1; });
-    std::for_each(vect2.begin(), vect2.end(), [&](int &i) { i += 11; });
-    result.clear();
-    result.insert(result.begin(), vect1.begin(), vect1.end());
-    result.insert(result.begin(), vect2.begin(), vect2.end());
-}
-
-int AceCard::GetRank() const {
-    return 11;
-}
-
-/* ***************************************** Deck ******************************************************* */
-
-void Deck::AddCard(const std::shared_ptr<Card> card) {
-    this->cards.push_back(card);
-}
-
-const std::vector<std::shared_ptr<Card>> &Deck::GetCards() const {
-    return this->cards;
-}
-
-const std::shared_ptr<Card> Deck::DrawCard() {
-    std::shared_ptr<Card> topCard = cards.back();
-    OATPP_LOGI("Deck", "[DrawCard] Drew = %s", topCard->GetDesc().c_str());
-    cards.pop_back();
-    return topCard;
-}
-
-/* ***************************************** DrawnCards ******************************************************* */
-
-int DrawnCards::GetValue() const {
-    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
-        OATPP_LOGD("DrawnCards", "[GetValue] cards.size=%d", cards.size());
-        std::for_each(cards.begin(), cards.end(), [&](const std::shared_ptr<Card> &card) {
-            OATPP_LOGD("DrawnCards", "[GetValue] card=%s", card->GetDesc().c_str());
-        });
-    }
-    std::vector<int> result = {0};
-    std::for_each(cards.begin(), cards.end(), [&](const std::shared_ptr<Card> &card) { card->GetValue(result); });
-    OATPP_LOGD("DrawnCards", "[GetValue] result.size=%d", result.size());
-    int largestValueLess22 = 0;
-    int smallestValueLarger21 = 99999;
-    std::for_each(result.begin(), result.end(), [&](int i) {
-        OATPP_LOGD("DrawnCards", "[GetValue] found sub-value=%d", i);
-        if (i <= 21 && i > largestValueLess22) {
-            largestValueLess22 = i;
-        }
-        if (i > 21 && i < smallestValueLarger21) {
-            smallestValueLarger21 = i;
-        }
-    });
-    OATPP_LOGD("DrawnCards", "[GetValue] largestValueLess22=%d, smallestValueLarger21=%d", largestValueLess22,
-               smallestValueLarger21);
-    return largestValueLess22 > 0 ? largestValueLess22 : smallestValueLarger21;
-}
-
-int DrawnCards::Size() const {
-    return cards.size();
-}
-
-bool DrawnCards::Simple9_10_11() const {
-    int val = GetValue();
-    return val >= 9 && val <= 11 && cards.size() == 2;
-}
-
-bool DrawnCards::IsBlackJack() const {
-    return cards.size() == 2 && GetValue() == 21;
-}
-
-bool DrawnCards::IsSimplePair() const {
-    return cards.size() == 2 && cards[0]->GetRank() == cards[1]->GetRank();
-}
-
-/* ***************************************** DrawDeck ******************************************************* */
-
-void DrawDeck::AddCard(const std::shared_ptr<Card> card) {
-    Deck::AddCard(card);
-    this->allCards.push_back(card);
-}
-
-void DrawDeck::shuffle() {
-    if (!Package::GetInstance().IsCheat()) {
-        std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
-    }
-}
-
-void DrawDeck::ReshuffleIfNeeded() {
-    if (cards.size() < 52 && !Package::GetInstance().IsCheat()) {
-        cards.clear();
-        cards.insert(cards.end(), allCards.begin(), allCards.end());
-        std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
-    }
-}
-
-bool DrawDeck::IsOutDated() const {
-    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
-        OATPP_LOGD("DrawDeck", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
-    }
-    std::chrono::seconds later{LIFETIME_DRAWDECK};
-    auto now = std::chrono::system_clock::now();
-    auto t1 = now - later;
-    return this->lastUsed < t1;
-}
-
-void DrawDeck::Use() {
-    this->lastUsed = std::chrono::system_clock::now();
-}
-
-/* ***************************************** Package ******************************************************* */
-
-void Package::Add52Cards(std::shared_ptr<DrawDeck> drawDeck) {
-    for (int j = 0; j < 4; j++) {
-        for (int i = 2; i < 11; i++) {
-            drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(i, std::to_string(i) + "-of-" + SUITES[j])));
-        }
-        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "Jack-of-" + SUITES[j])));
-        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "Queen-of-" + SUITES[j])));
-        drawDeck->AddCard(std::shared_ptr<Card>(new RegularCard(10, "King-of-" + SUITES[j])));
-        drawDeck->AddCard(std::shared_ptr<Card>(new AceCard("Ace-of-" + SUITES[j])));
-    }
-}
-
-std::shared_ptr<DrawDeck> Package::CreateDrawDeck() {
-    auto newDrawDeck = std::shared_ptr<DrawDeck>(new DrawDeck());
-    if (IsCheat()) {
-        std::for_each(deckDefintion.begin(), deckDefintion.end(), [&](int rank) {
-            OATPP_LOGI("Package", "[CreateDrawDeck] Cheat Add Card = %d", rank);
-            std::shared_ptr<Card> card;
-            if (rank == 11) {
-                card = std::shared_ptr<Card>(new AceCard("11-of-" + SUITES[0]));
-            } else {
-                card = std::shared_ptr<Card>(new RegularCard(rank, std::to_string(rank) + "-of-" + SUITES[0]));
-            }
-            newDrawDeck->AddCard(card);
-        });
-    } else {
-        for (int i = 0; i < 6; i++) {
-            Add52Cards(newDrawDeck);
-        }
-    }
-    return newDrawDeck;
-}
-
-void Package::Cheat(int ranksCount, ...) {
-    this->deckDefintion.clear();
-    va_list vl;
-    va_start(vl, ranksCount);
-    for (int i = 0; i < ranksCount; i++) {
-        this->deckDefintion.insert(this->deckDefintion.begin(), va_arg(vl, int));
-    }
-    va_end(vl);
-}
-
-bool Package::IsCheat() const {
-    return !deckDefintion.empty();
-}
 
 /* ***************************************** Bet ******************************************************* */
 
@@ -201,7 +12,9 @@ Bet::Bet(std::shared_ptr<Player> player, int bet) :
         bet(bet),
         drawnCards(std::unique_ptr<DrawnCards>(new DrawnCards())),
         betId(Rnd::GetInstance().GetEngine()()),
-        stand(false) {
+        stand(false),
+        isAskedForInsurance(false),
+        isInsuranceBought(false) {
 }
 
 std::unique_ptr<DrawnCards> &Bet::GetDrawnCards() {
@@ -281,8 +94,8 @@ void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
     WrapUp();
 
     auto actions = AddFollowActions(bet);
+    hitResponse->followActions = {};
     if (!actions->empty()) {
-        hitResponse->followActions = {};
         hitResponse->followActions->insert(hitResponse->followActions->begin(), actions->begin(), actions->end());
     }
 }
@@ -311,8 +124,8 @@ void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse
     WrapUp();
 
     auto actions = AddFollowActions(bet);
+    hitResponse->followActions = {};
     if (!actions->empty()) {
-        hitResponse->followActions = {};
         hitResponse->followActions->insert(hitResponse->followActions->begin(), actions->begin(), actions->end());
     }
 }
@@ -324,6 +137,7 @@ void Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse
     }
     bet->SetStand(true);
     WrapUp();
+    standResponse->followActions = {};
 }
 
 void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wrapper &betResponse) {
@@ -352,8 +166,8 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
     WrapUp();
 
     auto actions = AddFollowActions(bet);
+    betResponse->followActions = {};
     if (!actions->empty()) {
-        betResponse->followActions = {};
         betResponse->followActions->insert(betResponse->followActions->begin(), actions->begin(), actions->end());
     }
 }
@@ -395,14 +209,14 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
     WrapUp();
 
     auto actions = AddFollowActions(bet);
+    splitResponse->followActions = {};
     if (!actions->empty()) {
-        splitResponse->followActions = {};
         splitResponse->followActions->insert(splitResponse->followActions->begin(), actions->begin(), actions->end());
     }
 
     auto actions2ndBet = AddFollowActions(bet2nd);
+    splitResponse->secondBetFollowAction = {};
     if (!actions2ndBet->empty()) {
-        splitResponse->secondBetFollowAction = {};
         splitResponse->secondBetFollowAction->insert(splitResponse->secondBetFollowAction->begin(),
                                                      actions2ndBet->begin(), actions2ndBet->end());
     }
@@ -422,8 +236,8 @@ void Game::Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wr
     WrapUp();
 
     auto actions = AddFollowActions(bet);
+    standResponse->followActions = {};
     if (!actions->empty()) {
-        standResponse->followActions = {};
         standResponse->followActions->insert(standResponse->followActions->begin(), actions->begin(), actions->end());
     }
 }
@@ -500,10 +314,10 @@ bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &respon
             response->result = "You lost!!";
         }
     }
+    response->dealersAdditionalCard = {};
     if (isDone) {
         response->dealersSecondCard = dealerCardClosed->GetDesc();
         response->dealerTotal = drawnCardsDealer->GetValue();
-        response->dealersAdditionalCard = {};
         std::vector<std::shared_ptr<Card>, std::allocator<std::shared_ptr<Card>>>::const_iterator first = this->drawnCardsDealer->GetCards().begin();
         first += 2;
         std::for_each(first, this->drawnCardsDealer->GetCards().end(), [&](const std::shared_ptr<Card> &card) {
@@ -542,7 +356,7 @@ void Game::Payout(std::shared_ptr<Bet> bet) const {
 bool Game::IsDone() const {
     auto it = std::find_if(bets.begin(), bets.end(),
                            [&](const std::shared_ptr<Bet> &bet) -> bool { return !bet->IsDone(); });
-    OATPP_LOGI("Game", "[IsDone] ret = %d", it == bets.end());
+    OATPP_LOGD("Game", "[IsDone] ret = %d", it == bets.end());
     return it == bets.end();
 }
 
@@ -568,7 +382,17 @@ std::shared_ptr<Bet> Game::GetBet(int betId) {
 
 /* ***************************************** Player ******************************************************* */
 
-Player::Player() : cash(1000) {
+#define START_CASH 1000
+
+Player::Player(int id) : cash(START_CASH), id(id) {
+}
+
+Player::Player(int id, const std::string &name) : Player(id) {
+    this->name = name;
+}
+
+int Player::GetId() const {
+    return id;
 }
 
 int Player::GetCash() const {
@@ -580,8 +404,9 @@ void Player::SubCash(int bet) {
 }
 
 void Player::AddCash(int bet) {
-    OATPP_LOGI("Player", "[AddCash] From %d add %d = %d", cash, bet, cash + bet);
+    OATPP_LOGD("Player", "[AddCash] From %d add %d = %d", cash, bet, cash + bet);
     cash += bet;
+    HighscoreList::GetInstance().CheckHighScore(id, cash, name);
 }
 
 bool Player::IsOutDated() const {

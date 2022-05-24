@@ -2,11 +2,6 @@
 #ifndef BLACKJACK_UTIL_H
 #define BLACKJACK_UTIL_H
 
-#include <iostream>
-#include <vector>
-#include <map>
-#include <memory>
-#include <algorithm>
 #include <random>
 #include <chrono>
 #include <sstream>

@@ -3,134 +3,30 @@
 
 #define OATPP_DISABLE_LOGD
 
-#include <iostream>
-#include <vector>
 #include <map>
-#include <memory>
 #include <algorithm>
-#include <random>
 
 #include "oatpp/web/server/api/ApiController.hpp"
 #include "../dto/DTOs.hpp"
 #include "./util.h"
+#include "Card.hpp"
+#include "Deck.hpp"
 
-class Card {
-protected:
-    Card(const std::string &desc);
-
-private:
-    const std::string desc;
-public:
-    /**
-     * A card must add its value to all elements of `result`, a card may add new elements if it has multiple values
-     * @param result will have at least 1 element.
-     */
-    virtual void GetValue(std::vector<int> &result) const = 0;
-
-    const std::string &GetDesc() const;
-
-    virtual int GetRank() const = 0;
-};
-
-class RegularCard : public Card {
-public:
-    RegularCard(int value, const std::string &desc);
-
-private:
-    const int value;
-public:
-    /**
-     * A regular card will just add its value to all elements
-     * @param result number of elements will not be changed
-     */
-    virtual void GetValue(std::vector<int> &result) const override;
-
-    virtual int GetRank() const override;
-};
-
-class AceCard : public Card {
-public:
-    explicit AceCard(const std::string &desc);
-
-    /**
-     * An Ace will duplicate the elements in `result` and then add 1 to the first half and 11 to the second half.
-     * @param result number of elements will be doubled
-     */
-    virtual void GetValue(std::vector<int> &result) const override;
-
-    virtual int GetRank() const override;
-};
-
-class Deck {
-protected:
-    std::vector<std::shared_ptr<Card>> cards;
-public:
-    void AddCard(const std::shared_ptr<Card> card);
-
-    const std::vector<std::shared_ptr<Card>> &GetCards() const;
-
-    const std::shared_ptr<Card> DrawCard();
-};
-
-
-class DrawnCards : public Deck {
-public:
-    int GetValue() const;
-
-    int Size() const;
-
-    bool Simple9_10_11() const;
-
-    bool IsBlackJack() const;
-
-    bool IsSimplePair() const;
-};
-
-class DrawDeck : public Deck {
-private:
-    std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
-protected:
-    std::vector<std::shared_ptr<Card>> allCards;
-public:
-    void AddCard(const std::shared_ptr<Card> card);
-
-    void shuffle();
-
-    void ReshuffleIfNeeded();
-
-    bool IsOutDated() const;
-
-    void Use();
-};
-
-
-class Package {
-SINGLETON(Package)
-
-private:
-    const std::string SUITES[4];
-    std::vector<int> deckDefintion;
-
-    Package() : SUITES{"Hearts", "Spades", "Diamonds", "Clubs"} {}
-
-    void Add52Cards(std::shared_ptr<DrawDeck> drawDeck);
-
-public:
-    std::shared_ptr<DrawDeck> CreateDrawDeck();
-
-    void Cheat(int ranks, ...);
-
-    bool IsCheat() const;
-};
 
 class Player {
 public:
-    Player();
+    Player(int id);
+
+    Player(int id, const std::string &name);
 
 private:
+    int id;
+    std::string name;
     int cash;
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
+    int GetId() const;
+
     int GetCash() const;
 
     void SubCash(int bet);

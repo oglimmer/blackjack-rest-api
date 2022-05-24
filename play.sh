@@ -4,7 +4,7 @@ set -eu
 
 SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
 
-PLAYER_ID=$(curl -s $SERVER_BASE/player -X POST|jq -r '.playerId')
+PLAYER_ID=$(curl -s $SERVER_BASE/player -X POST -d '{"name": "'${1:-}'"}'|jq -r '.playerId')
 DECK_ID=$(curl -s $SERVER_BASE/deck -X POST|jq -r '.deckId')
 
 CASH=$(curl -s $SERVER_BASE/player/${PLAYER_ID}|jq -r '.cash')
@@ -34,7 +34,7 @@ while (( CASH > 0 )); do
   BET_ID=$(echo "$BET_RESP" | jq -r '.betId')
   YOUR_TOTAL=$(echo "$BET_RESP" | jq -r '.yourTotal')
   ACTIONS=$(echo "$BET_RESP" | jq -r '.followActions')
-  while [ "$ACTIONS" != "null" ]; do
+  while [ "$ACTIONS" != "[]" ]; do
 
     ACTIONS=$(echo "$ACTIONS" | jq -r 'join(" or ")')
 
@@ -84,7 +84,7 @@ while (( CASH > 0 )); do
 
   
   if [ "$BET_2ND_ID" != "null" ]; then
-    while [ "$ACTIONS_2ND" != "null" ]; do
+    while [ "$ACTIONS_2ND" != "[]" ]; do
 
       ACTIONS_2ND=$(echo "$ACTIONS_2ND" | jq -r 'join(" or ")')
 

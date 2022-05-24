@@ -21,7 +21,7 @@ public:
      */
     OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, serverConnectionProvider)([] {
         return oatpp::network::tcp::server::ConnectionProvider::createShared(
-                {"0.0.0.0", 8000, oatpp::network::Address::IP_4});
+                {"0.0.0.0", 8000, oatpp::network::Address::IP_4}, true);
     }());
 
     /**

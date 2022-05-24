@@ -29,7 +29,7 @@ void DrawDeckRegistry::ClearTimedout() {
             OATPP_LOGI("DrawDeckRegistry", "[ClearTimedout] erasing %d", it);
             it = drawDecks.erase(it);
         } else {
-             ++it;
+            ++it;
         }
     }
 }
@@ -86,12 +86,10 @@ void GameRegistry::ClearTimedout() {
 
 /* ***************************************** PlayerRegistry ******************************************************* */
 
-int PlayerRegistry::CreatePlayer() {
-    auto player = std::shared_ptr<Player>(new Player());
-    int id = Rnd::GetInstance().GetEngine()();
+void PlayerRegistry::CreatePlayer(std::shared_ptr<Player> player) {
+    int id = player->GetId();
     auto lockGuard = std::lock_guard(mutex);
     players.insert_or_assign(id, player);
-    return id;
 }
 
 std::shared_ptr<Player> PlayerRegistry::GetPlayer(int id) {

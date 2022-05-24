@@ -82,7 +82,7 @@ class StandResponse : public oatpp::DTO {
 
     DTO_INIT(StandResponse, oatpp::DTO)
 
-    DTO_FIELD(Vector < String >, followActions); // this is always null
+    DTO_FIELD(Vector < String >, followActions); // this is always [] which makes the evaluation in bash easier
 };
 
 
@@ -106,6 +106,11 @@ class CreateGameResponse : public oatpp::DTO {
     DTO_FIELD(Int32, gameId);
 };
 
+class CreatePlayerRequest : public oatpp::DTO {
+    DTO_INIT(CreatePlayerRequest, DTO)
+
+    DTO_FIELD(String, name);
+};
 class CreatePlayerResponse : public oatpp::DTO {
     DTO_INIT(CreatePlayerResponse, DTO)
 

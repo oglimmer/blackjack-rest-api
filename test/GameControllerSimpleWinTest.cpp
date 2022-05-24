@@ -69,7 +69,7 @@ void GameControllerSimpleWinTest::onRun() {
         OATPP_ASSERT(responseStand->getStatusCode() == 200);
         auto messageStand = responseStand->readBodyToDto<oatpp::Object<StandResponse >>(objectMapper.get());
         OATPP_ASSERT(messageStand);
-        OATPP_ASSERT(messageStand->followActions == 0);
+        OATPP_ASSERT(messageStand->followActions->empty());
 
         auto responseResult = client->getResult(betId, gameId);
         OATPP_ASSERT(responseResult->getStatusCode() == 200);
