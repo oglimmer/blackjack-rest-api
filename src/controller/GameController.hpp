@@ -26,6 +26,9 @@ public:
         } catch (const oatpp::web::protocol::CommunicationError &e) {
             return oatpp::web::protocol::http::outgoing::ResponseFactory::createResponse(
                     oatpp::web::protocol::http::Status::CODE_400, e.what());
+        } catch (const GameException &e) {
+            return oatpp::web::protocol::http::outgoing::ResponseFactory::createResponse(
+                    oatpp::web::protocol::http::Status::CODE_400, e.what());
         } catch (const std::runtime_error &e) {
             return oatpp::web::protocol::http::outgoing::ResponseFactory::createResponse(
                     oatpp::web::protocol::http::Status::CODE_500, e.what());

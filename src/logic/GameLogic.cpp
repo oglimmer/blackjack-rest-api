@@ -78,7 +78,7 @@ Game::Game(std::shared_ptr<DrawDeck> drawDeck) :
 
 void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
     if (!IsFollowActionsAllowed(bet, "hit")) {
-        throw std::exception();
+        throw GameException("Action `hit` not allowed.");
     }
 
     const auto card = drawDeck->DrawCard();
@@ -102,13 +102,13 @@ void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
 
 void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
     if (bet->GetBet() > bet->GetPlayer()->GetCash()) {
-        throw std::exception();
+        throw GameException("Not enough money to double.");
     }
     if (!bet->GetDrawnCards()->Simple9_10_11()) {
-        throw std::exception();
+        throw GameException("Double is only allowed when the first two cards are 9,10,11 in total.");
     }
     if (!IsFollowActionsAllowed(bet, "double")) {
-        throw std::exception();
+        throw GameException("Action `double` not allowed.");
     }
 
     bet->GetPlayer()->SubCash(bet->GetBet());
@@ -133,7 +133,7 @@ void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse
 
 void Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse) {
     if (!IsFollowActionsAllowed(bet, "stand")) {
-        throw std::exception();
+        throw GameException("Action `stand` not allowed.");
     }
     bet->SetStand(true);
     WrapUp();
@@ -142,7 +142,7 @@ void Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse
 
 void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wrapper &betResponse) {
     if (betVal > player->GetCash() || betVal < 1) {
-        throw std::exception();
+        throw GameException("Not enough money.");
     }
 
     auto bet = std::shared_ptr<Bet>(new Bet(player, betVal));
@@ -174,13 +174,13 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
 
 void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse) {
     if (bet->GetBet() > bet->GetPlayer()->GetCash()) {
-        throw std::exception();
+        throw GameException("Not enough money to split.");
     }
     if (!bet->GetDrawnCards()->IsSimplePair() || bets.size() != 1) {
-        throw std::exception();
+        throw GameException("Split is only allowed when the first two cards are of the same rank.");
     }
     if (!IsFollowActionsAllowed(bet, "split")) {
-        throw std::exception();
+        throw GameException("Action `split` not allowed.");
     }
 
     auto bet2nd = std::shared_ptr<Bet>(new Bet(bet->GetPlayer(), bet->GetBet()));
@@ -224,7 +224,10 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
 
 void Game::Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse) {
     if (!IsFollowActionsAllowed(bet, "insurance")) {
-        throw std::exception();
+        throw GameException("Action `insurance` not allowed.");
+    }
+    if (insurance && bet->GetBet() * 0.5 > bet->GetPlayer()->GetCash()) {
+        throw GameException("Not enough money to buy an insurance.");
     }
 
     bet->SetAskedForInsurance(true);

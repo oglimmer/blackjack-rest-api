@@ -4,6 +4,17 @@
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/Types.hpp"
 
+class GameException : public std::exception {
+private:
+    std::string msg;
+public:
+    GameException(const std::string &msg) : msg(msg) {};
+
+    virtual const char* what() const _NOEXCEPT override {
+        return msg.c_str();
+    }
+};
+
 #include OATPP_CODEGEN_BEGIN(DTO)
 
 class BetGetResponse : public oatpp::DTO {
