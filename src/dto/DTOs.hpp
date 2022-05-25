@@ -5,14 +5,19 @@
 #include "oatpp/core/Types.hpp"
 
 class GameException : public std::exception {
-private:
-    std::string msg;
 public:
-    GameException(const std::string &msg) : msg(msg) {};
+    explicit GameException(const char *message) : msg_(message) {}
 
-    virtual const char* what() const _NOEXCEPT override {
-        return msg.c_str();
+    explicit GameException(const std::string &message) : msg_(message) {}
+
+    virtual ~GameException() noexcept {}
+
+    virtual const char *what() const noexcept {
+        return msg_.c_str();
     }
+
+protected:
+    std::string msg_;
 };
 
 #include OATPP_CODEGEN_BEGIN(DTO)
@@ -122,6 +127,7 @@ class CreatePlayerRequest : public oatpp::DTO {
 
     DTO_FIELD(String, name);
 };
+
 class CreatePlayerResponse : public oatpp::DTO {
     DTO_INIT(CreatePlayerResponse, DTO)
 
