@@ -26,15 +26,15 @@ const std::string &Highscore::GetName() const {
 
 HighscoreList::HighscoreList() {
     CheckHighScore(1, 100, "Oli");
-    CheckHighScore(2, 200, "Mike");
-    CheckHighScore(3, 300, "Ute");
-    CheckHighScore(4, 400, "Uschi");
-    CheckHighScore(5, 500, "Jack");
-    CheckHighScore(6, 600, "Jim");
-    CheckHighScore(7, 700, "John");
-    CheckHighScore(8, 800, "Torsten");
-    CheckHighScore(9, 900, "David");
-    CheckHighScore(10, 1000, "Heiko");
+    CheckHighScore(2, 200, "Oli");
+    CheckHighScore(3, 300, "Oli");
+    CheckHighScore(4, 400, "Oli");
+    CheckHighScore(5, 500, "Oli");
+    CheckHighScore(6, 600, "Oli");
+    CheckHighScore(7, 700, "Oli");
+    CheckHighScore(8, 800, "Oli");
+    CheckHighScore(9, 900, "Oli");
+    CheckHighScore(10, 1000, "Oli");
 }
 
 void HighscoreList::CheckHighScore(int id, int money, const std::string &name) {

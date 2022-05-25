@@ -63,17 +63,11 @@ private:
 
 public:
 
-    ENDPOINT("GET", "/", rootRedirect, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "GET /");
-        auto resp = createResponse(Status::CODE_301);
-        resp->putHeader("Location", "/v2/");
-        return resp;
-    }
 
-    ENDPOINT("GET", "/v2/", root, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-//        LogAccess(request, "GET /v2/");
-        return createResponse(Status::CODE_200,
-                              "## Create your player (do once)\ncurl https://bj.oglimmer.de/v2/player -X POST\n\n## Create a stack of cards (called deck, do this once):\ncurl https://bj.oglimmer.de/v2/deck -X POST\n\n## Check your cash:\ncurl https://bj.oglimmer.de/v2/player/${PLAYER_ID}\n\n## Start a single game (re-use player and deck)\ncurl https://bj.oglimmer.de/v2/game -d '{\"deckId\": '${DECK_ID}'}'\n\n## Put your bet on a newly started game (once per game)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet -d '{\"playerId\": '${PLAYER_ID}', \"bet\": '${BET}'}'\n\n## Either Hit (take a card, do this as long as you want more cards)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/hit -X POST\n## or Stand (finish and let the dealer draw cards):\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/stand -X POST\n## or Double (if your initial cards are 9,10,11 in total)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/double -X POST\n## or Split (if your initial cards are of the same rank)\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/split -X POST\n## when the dealer has an Ace on the first card, you are asked for an insurance:\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{\"insurance\": \"${yes|no}\"}'\n\n## When the 'followActions' are [] use this to get the end result\ncurl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}\n\nUse: https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh to play via bash! (needs curl and jq installed)\n");
+    ENDPOINT_INFO(createPlayer) {
+        info->summary = "Creates a new Player object";
+        info->addConsumes < Object < CreatePlayerRequest >> ("application/json");
+        info->addResponse < Object < CreatePlayerResponse >> (Status::CODE_200, "application/json");
     }
 
     ENDPOINT("POST", "/v2/player", createPlayer, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
@@ -82,6 +76,12 @@ public:
         auto dto = CreatePlayerResponse::createShared();
         dto->playerId = id;
         return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT_INFO(getPlayer) {
+        info->summary = "Returns the cash a player owns";
+        info->addResponse < Object < GetPlayerResponse >> (Status::CODE_200, "application/json");
+        info->pathParams["playerId"].description = "Player ID, retrieved by POST /v2/player";
     }
 
     ENDPOINT("GET", "/v2/player/{playerId}", getPlayer,
@@ -99,6 +99,11 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ENDPOINT_INFO(createDrawDeck) {
+        info->summary = "Creates a new Deck object";
+        info->addResponse < Object < CreateDeckResponse >> (Status::CODE_200, "application/json");
+    }
+
     ENDPOINT("POST", "/v2/deck", createDrawDeck, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
         LogAccess(request, "POST /v2/deck");
         auto &reg = DrawDeckRegistry::GetInstance();
@@ -107,6 +112,12 @@ public:
         auto dto = CreateDeckResponse::createShared();
         dto->deckId = id;
         return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT_INFO(createGame) {
+        info->summary = "Creates a new Game.";
+        info->addConsumes < Object < CreateGameRequest >> ("application/json");
+        info->addResponse < Object < CreateDeckResponse >> (Status::CODE_200, "application/json");
     }
 
     ENDPOINT("POST", "/v2/game", createGame,
@@ -126,6 +137,13 @@ public:
         auto dto = CreateGameResponse::createShared();
         dto->gameId = id;
         return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT_INFO(placeBet) {
+        info->summary = "Places the initial bet on a game.";
+        info->addConsumes < Object < BetRequest >> ("application/json");
+        info->addResponse < Object < BetResponse >> (Status::CODE_200, "application/json");
+        info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";
     }
 
     ENDPOINT("POST", "/v2/game/{gameId}/bet", placeBet,
@@ -148,26 +166,11 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
-    ENDPOINT("POST", "/v2/game/{gameId}/bet/{bet}", deprecatedBet,
-             PATH(Int32, gameId),
-             PATH(Int32, bet),
-             REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/bet/" + std::to_string(bet));
-        return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet with '{playerId, bet}'");
-    }
-
-    ENDPOINT("POST", "/v2/game/{gameId}/hit", deprecatedHit,
-             PATH(Int32, gameId),
-             REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/hit");
-        return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet/{betId}/hit");
-    }
-
-    ENDPOINT("POST", "/v2/game/{gameId}/stand", deprecatedStand,
-             PATH(Int32, gameId),
-             REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/stand");
-        return createResponse(Status::CODE_304, "Endpoint deprecated. Use /game/{gameId}/bet/{betId}/stand");
+    ENDPOINT_INFO(doubleBet) {
+        info->summary = "Doubles the bet and takes another card. This option is only available when the first two cards are 9,10,11 in total.";
+        info->addResponse < Object < HitResponse >> (Status::CODE_200, "application/json");
+        info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";
+        info->pathParams["betId"].description = "Bet ID, retrieved by POST /v2/game/<GAMEID>/bet";
     }
 
     ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/double", doubleBet,
@@ -192,6 +195,13 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ENDPOINT_INFO(split) {
+        info->summary = "Split your hand into two hands. Also draws 2 additional cards for each hand. This option is only available when the first two cards are of the same rank.";
+        info->addResponse < Object < SplitResponse >> (Status::CODE_200, "application/json");
+        info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";
+        info->pathParams["betId"].description = "Bet ID, retrieved by POST /v2/game/<GAMEID>/bet";
+    }
+
     ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/split", split,
              PATH(Int32, gameId),
              PATH(Int32, betId),
@@ -212,6 +222,13 @@ public:
         auto dto = SplitResponse::createShared();
         game->Split(bet, dto);
         return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT_INFO(hit) {
+        info->summary = "Hit - takes another card.";
+        info->addResponse < Object < HitResponse >> (Status::CODE_200, "application/json");
+        info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";
+        info->pathParams["betId"].description = "Bet ID, retrieved by POST /v2/game/<GAMEID>/bet";
     }
 
     ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/hit", hit,
@@ -236,6 +253,13 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ENDPOINT_INFO(stand) {
+        info->summary = "Stand - Finishes the game, thus let's the dealer take cards and finally pays the winner.";
+        info->addResponse < Object < StandResponse >> (Status::CODE_200, "application/json");
+        info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";
+        info->pathParams["betId"].description = "Bet ID, retrieved by POST /v2/game/<GAMEID>/bet";
+    }
+
     ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/stand", stand,
              PATH(Int32, gameId),
              PATH(Int32, betId),
@@ -255,6 +279,14 @@ public:
         auto dto = StandResponse::createShared();
         game->Stand(bet, dto);
         return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT_INFO(insurance) {
+        info->summary = "Answers the dealer's question for an insurance. This option is only available when the dealer's first card as an Ace.";
+        info->addResponse < Object < StandResponse >> (Status::CODE_200, "application/json");
+        info->addConsumes < Object < InsuranceRequest >> ("application/json");
+        info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";
+        info->pathParams["betId"].description = "Bet ID, retrieved by POST /v2/game/<GAMEID>/bet";
     }
 
     ENDPOINT("POST", "/v2/game/{gameId}/bet/{betId}/insurance", insurance,
@@ -279,6 +311,13 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ENDPOINT_INFO(getBet) {
+        info->summary = "Returns information about the dealer's cards, the dealer's total Value and who won the game.";
+        info->addResponse < Object < BetGetResponse >> (Status::CODE_200, "application/json");
+        info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";
+        info->pathParams["betId"].description = "Bet ID, retrieved by POST /v2/game/<GAMEID>/bet";
+    }
+
     ENDPOINT("GET", "/v2/game/{gameId}/bet/{betId}", getBet,
              PATH(Int32, gameId),
              PATH(Int32, betId),
@@ -297,6 +336,11 @@ public:
             //GameRegistry::GetInstance().DeleteGame(gameId); this needs to give each bet a chance to GET
         }
         return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    ENDPOINT_INFO(highscore) {
+        info->summary = "Returns the highscore.";
+        info->addResponse<String>(Status::CODE_200, "application/json");
     }
 
     ENDPOINT("GET", "/v2/highscore", highscore,

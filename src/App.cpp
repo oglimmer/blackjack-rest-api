@@ -1,4 +1,5 @@
 #include "./controller/GameController.hpp"
+#include "./controller/RootController.hpp"
 #include "./AppComponent.hpp"
 
 #include "oatpp/network/Server.hpp"
@@ -14,7 +15,14 @@ void run() {
     OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
 
     /* Create GameController and add all of its endpoints to router */
-    router->addController(std::make_shared<GameController>());
+    const std::shared_ptr<GameController> &controller = std::make_shared<GameController>();
+    router->addController(controller);
+    router->addController(std::make_shared<RootController>());
+
+    /* Create SwaggerController and add all of its endpoints to router */
+    oatpp::web::server::api::Endpoints docEndpoints;
+    docEndpoints.append(router->addController(controller)->getEndpoints());
+    router->addController(oatpp::swagger::Controller::createShared(docEndpoints));
 
     /* Get connection handler component */
     OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, connectionHandler);
