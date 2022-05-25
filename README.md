@@ -73,7 +73,7 @@ curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/split -X POST
 ## when the dealer has an Ace on the first card, you are asked for an insurance:
 curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{"insurance": "${yes|no}"}'
 
-## When the 'followActions' are null use this to get the end result
+## When the 'followActions' are [] use this to get the end result
 curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}
 
 Use: https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh to play via bash! (needs curl and jq installed)
