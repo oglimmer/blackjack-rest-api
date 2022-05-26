@@ -24,11 +24,14 @@ DBHighscore::DBHighscore() {
     user = EnvToString("USER", {});
     password = EnvToString("PASSWORD", {});
     if (!doc_id.empty()) {
+        OATPP_LOGI("DBHighscore", "DB mode active. Using %s with user %s and doc_id %s", host.c_str(), user.c_str(), doc_id.c_str());
         auto connectionProvider = tcp::client::ConnectionProvider::createShared(
                 {host, port, oatpp::network::Address::IP_4});
         auto requestExecutor = client::HttpRequestExecutor::createShared(connectionProvider);
         objectMapper = json::mapping::ObjectMapper::createShared();
         client = CouchdbHighscoreClient::createShared(requestExecutor, objectMapper);
+    } else {
+        OATPP_LOGI("DBHighscore", "DB mode deactivated.");
     }
 }
 
