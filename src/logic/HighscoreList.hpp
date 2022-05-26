@@ -35,7 +35,7 @@ private:
     HighscoreList();
 
     std::vector<Highscore> highscore;
-    std::mutex mutex;
+    std::mutex highscore_mutex;
 public:
     void CheckHighScore(int id, int money, const std::string &name);
 

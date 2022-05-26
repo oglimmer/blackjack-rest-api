@@ -36,7 +36,7 @@ void HighscoreList::CheckHighScore(int id, int money, const std::string &name) {
     if (name.empty()) {
         return;
     }
-    auto lg = std::lock_guard(mutex);
+    auto lg = std::lock_guard(highscore_mutex);
     OATPP_LOGD("HighscoreList", "[CheckHighScore] in %d - %d - %s", id, money, name.c_str());
     if (highscore.empty()) {
         Highscore hs(id, name, money);
@@ -76,7 +76,7 @@ void HighscoreList::CheckHighScore(int id, int money, const std::string &name) {
 }
 
 oatpp::data::mapping::type::DTOWrapper<HighscoreResponse> HighscoreList::GetHighscores() {
-    auto lg = std::lock_guard(mutex);
+    auto lg = std::lock_guard(highscore_mutex);
     auto result = HighscoreResponse::Wrapper::createShared();
     result->highscores = {};
     for (int i = 0; i < highscore.size(); i++) {
