@@ -13,10 +13,16 @@ int GameController::CreatePlayer(const std::shared_ptr<IncomingRequest> &request
 }
 
 void GameController::LogAccess(const std::shared_ptr<IncomingRequest> &request, const std::string &endpoint) {
-    auto &context = request->getConnection()->getInputStreamContext();
-    for (const auto &pair: context.getProperties().getAll()) {
-        if (std::string(static_cast<const char *>(pair.first.getData())) == "peer_address") {
-            OATPP_LOGI("GameController", ("[" + endpoint + "] '%s'").c_str(), pair.second.getData());
+    std::string ip("no X-Forwarded-For");
+    std::string ua("no user-agent");
+    for (const auto &pair: request->getHeaders().getAll()) {
+//        OATPP_LOGD("GameController", ("[" + endpoint + "] '%s' = '%s'").c_str(), pair.first.getData(), pair.second.getData());
+        if (std::string(static_cast<const char *>(pair.first.getData())) == "X-Forwarded-For") {
+            ip = static_cast<const char *>(pair.second.getData());
+        }
+        if (std::string(static_cast<const char *>(pair.first.getData())) == "User-Agent") {
+            ua = static_cast<const char *>(pair.second.getData());
         }
     }
+    OATPP_LOGI("GameController", ("[" + endpoint + "] '%s' '%s'").c_str(), ip.c_str(), ua.c_str());
 }
