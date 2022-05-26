@@ -7,26 +7,28 @@ int DrawDeckRegistry::CreateDrawDeck() {
     auto drawDeck = Package::GetInstance().CreateDrawDeck();
     drawDeck->shuffle();
     int id = Rnd::GetInstance().GetEngine()();
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(drawDecks_mutex);
     drawDecks.insert_or_assign(id, drawDeck);
     return id;
 }
 
 std::shared_ptr<DrawDeck> DrawDeckRegistry::GetDrawDeck(int id) {
-    auto lockGuard = std::lock_guard(mutex);
-    auto ret = drawDecks[id];
-    if (ret) {
+    const std::lock_guard<std::mutex> lockGuard(drawDecks_mutex);
+    try {
+        auto ret = drawDecks.at(id);
         ret->Use();
+        return ret;
+    } catch (std::out_of_range) {
+        return nullptr;
     }
-    return ret;
 }
 
 void DrawDeckRegistry::ClearTimedout() {
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(drawDecks_mutex);
     for (auto it = drawDecks.begin(); it != drawDecks.end();) {
-        OATPP_LOGD("DrawDeckRegistry", "[ClearTimedout] checking %d", it);
+        OATPP_LOGD("DrawDeckRegistry", "[ClearTimedout] checking %d", it->first);
         if (it->second->IsOutDated()) {
-            OATPP_LOGI("DrawDeckRegistry", "[ClearTimedout] erasing %d", it);
+            OATPP_LOGI("DrawDeckRegistry", "[ClearTimedout] erasing %d", it->first);
             it = drawDecks.erase(it);
         } else {
             ++it;
@@ -40,22 +42,24 @@ int GameRegistry::CreateGame(std::shared_ptr<DrawDeck> drawDeck) {
     drawDeck->ReshuffleIfNeeded();
     auto game = std::shared_ptr<Game>(new Game(drawDeck));
     int id = Rnd::GetInstance().GetEngine()();
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(games_mutex);
     games.insert_or_assign(id, game);
     return id;
 }
 
 std::shared_ptr<Game> GameRegistry::GetGame(int id) {
-    auto lockGuard = std::lock_guard(mutex);
-    auto ret = games[id];
-    if (ret) {
+    const std::lock_guard<std::mutex> lockGuard(games_mutex);
+    try {
+        auto ret = games.at(id);
         ret->Use();
+        return ret;
+    } catch (std::out_of_range) {
+        return nullptr;
     }
-    return ret;
 }
 
 void GameRegistry::DeleteGame(std::shared_ptr<Game> game) {
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(games_mutex);
     for (auto it = games.begin(); it != games.end();) {
         if (it->second == game) {
             it = games.erase(it);
@@ -66,17 +70,17 @@ void GameRegistry::DeleteGame(std::shared_ptr<Game> game) {
 }
 
 void GameRegistry::DeleteGame(int id) {
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(games_mutex);
     games.erase(id);
     OATPP_LOGI("GameRegistry", "[DeleteGame] id=%d", id);
 }
 
 void GameRegistry::ClearTimedout() {
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(games_mutex);
     for (auto it = games.begin(); it != games.end();) {
-        OATPP_LOGD("GameRegistry", "[ClearTimedout] checking %d", it);
+        OATPP_LOGD("GameRegistry", "[ClearTimedout] checking %d", it->first);
         if (it->second->IsOutDated()) {
-            OATPP_LOGI("GameRegistry", "[ClearTimedout] erasing %d", it);
+            OATPP_LOGI("GameRegistry", "[ClearTimedout] erasing %d", it->first);
             it = games.erase(it);
         } else {
             ++it;
@@ -88,25 +92,27 @@ void GameRegistry::ClearTimedout() {
 
 void PlayerRegistry::CreatePlayer(std::shared_ptr<Player> player) {
     int id = player->GetId();
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(players_mutex);
     players.insert_or_assign(id, player);
 }
 
 std::shared_ptr<Player> PlayerRegistry::GetPlayer(int id) {
-    auto lockGuard = std::lock_guard(mutex);
-    auto ret = players[id];
-    if (ret) {
+    const std::lock_guard<std::mutex> lockGuard(players_mutex);
+    try {
+        auto ret = players.at(id);
         ret->Use();
+        return ret;
+    } catch (std::out_of_range) {
+        return nullptr;
     }
-    return ret;
 }
 
 void PlayerRegistry::ClearTimedout() {
-    auto lockGuard = std::lock_guard(mutex);
+    const std::lock_guard<std::mutex> lockGuard(players_mutex);
     for (auto it = players.begin(); it != players.end();) {
-        OATPP_LOGD("PlayerRegistry", "[ClearTimedout] checking %d", it);
+        OATPP_LOGD("PlayerRegistry", "[ClearTimedout] checking %d", it->first);
         if (it->second->IsOutDated()) {
-            OATPP_LOGI("PlayerRegistry", "[ClearTimedout] erasing %d", it);
+            OATPP_LOGI("PlayerRegistry", "[ClearTimedout] erasing %d", it->first);
             it = players.erase(it);
         } else {
             ++it;

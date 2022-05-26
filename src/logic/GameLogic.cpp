@@ -14,7 +14,8 @@ Bet::Bet(std::shared_ptr<Player> player, int bet) :
         betId(Rnd::GetInstance().GetEngine()()),
         stand(false),
         isAskedForInsurance(false),
-        isInsuranceBought(false) {
+        isInsuranceBought(false),
+        isResultChecked(false) {
 }
 
 std::unique_ptr<DrawnCards> &Bet::GetDrawnCards() {
@@ -63,6 +64,14 @@ bool Bet::IsInsuranceBought() const {
 
 void Bet::SetInsuranceBought(bool b) {
     this->isInsuranceBought = b;
+}
+
+bool Bet::ResultChecked() const {
+    return this->isResultChecked;
+}
+
+void Bet::SetResultChecked(bool b) {
+    this->isResultChecked = b;
 }
 
 /* ***************************************** Game ******************************************************* */
@@ -327,7 +336,17 @@ bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &respon
             response->dealersAdditionalCard->push_back(card->GetDesc());
         });
     }
-    return isDone;
+    if (isDone) {
+        bet->SetResultChecked(true);
+    }
+    return isDone && allResultsChecked();
+}
+
+bool Game::allResultsChecked() const {
+    // all bets are checked if none is not-checked
+    auto it = std::find_if(bets.begin(), bets.end(),
+                           [](const std::shared_ptr<Bet> &bet) -> bool { return !bet->ResultChecked(); });
+    return it == bets.end();
 }
 
 void Game::Payout() const {

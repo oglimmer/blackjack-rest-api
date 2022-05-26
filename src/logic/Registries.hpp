@@ -14,7 +14,7 @@ SINGLETON(DrawDeckRegistry)
 
 private:
     std::map<int, std::shared_ptr<DrawDeck>> drawDecks;
-    std::mutex mutex;
+    std::mutex drawDecks_mutex;
 
     DrawDeckRegistry() {}
 
@@ -31,7 +31,7 @@ SINGLETON(GameRegistry)
 
 private:
     std::map<int, std::shared_ptr<Game>> games;
-    std::mutex mutex;
+    std::mutex games_mutex;
 
     GameRegistry() {}
 
@@ -52,7 +52,7 @@ SINGLETON(PlayerRegistry)
 
 private:
     std::map<int, std::shared_ptr<Player>> players;
-    std::mutex mutex;
+    std::mutex players_mutex;
 
     PlayerRegistry() {}
 

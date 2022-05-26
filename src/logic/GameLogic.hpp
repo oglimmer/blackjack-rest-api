@@ -47,6 +47,7 @@ private:
     bool stand;
     bool isAskedForInsurance;
     bool isInsuranceBought;
+    bool isResultChecked;
 public:
     Bet(std::shared_ptr<Player> player, int bet);
 
@@ -73,6 +74,10 @@ public:
     bool IsInsuranceBought() const;
 
     void SetInsuranceBought(bool b);
+
+    bool ResultChecked() const;
+
+    void SetResultChecked(bool b);
 };
 
 class Game {
@@ -121,6 +126,9 @@ private:
     void Payout(std::shared_ptr<Bet> bet) const;
 
     bool IsDone() const;
+
+    bool allResultsChecked() const;
+
 };
 
 

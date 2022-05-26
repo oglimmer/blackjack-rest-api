@@ -336,7 +336,7 @@ public:
         }
         auto dto = BetGetResponse::createShared();
         if (game->AddResponse(bet, dto)) {
-            //GameRegistry::GetInstance().DeleteGame(gameId); this needs to give each bet a chance to GET
+            GameRegistry::GetInstance().DeleteGame(gameId);
         }
         return createDtoResponse(Status::CODE_200, dto);
     }
