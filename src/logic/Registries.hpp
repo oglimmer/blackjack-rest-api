@@ -3,8 +3,6 @@
 #ifndef BLACKJACK_REGISTRIES_HPP
 #define BLACKJACK_REGISTRIES_HPP
 
-#define OATPP_DISABLE_LOGD
-
 #include <thread>
 #include "util.h"
 #include "GameLogic.hpp"

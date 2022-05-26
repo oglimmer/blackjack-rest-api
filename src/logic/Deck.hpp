@@ -2,8 +2,6 @@
 #ifndef BLACKJACK_DECK_HPP
 #define BLACKJACK_DECK_HPP
 
-#define OATPP_DISABLE_LOGD
-
 #include <memory>
 #include <vector>
 

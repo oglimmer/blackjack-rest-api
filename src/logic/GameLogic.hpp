@@ -1,8 +1,6 @@
 #ifndef GameLogic_hpp
 #define GameLogic_hpp
 
-#define OATPP_DISABLE_LOGD
-
 #include <map>
 #include <algorithm>
 

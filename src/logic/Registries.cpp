@@ -26,14 +26,14 @@ std::shared_ptr<DrawDeck> DrawDeckRegistry::GetDrawDeck(int id) {
 void DrawDeckRegistry::ClearTimedout() {
     const std::lock_guard<std::mutex> lockGuard(drawDecks_mutex);
     for (auto it = drawDecks.begin(); it != drawDecks.end();) {
-        OATPP_LOGD("DrawDeckRegistry", "[ClearTimedout] checking %d", it->first);
         if (it->second->IsOutDated()) {
-            OATPP_LOGI("DrawDeckRegistry", "[ClearTimedout] erasing %d", it->first);
+            OATPP_LOGD("DrawDeckRegistry", "[ClearTimedout] erasing %d", it->first);
             it = drawDecks.erase(it);
         } else {
             ++it;
         }
     }
+    OATPP_LOGD("DrawDeckRegistry", "[ClearTimedout] Still %d drawDecks in registry.", drawDecks.size());
 }
 
 /* ***************************************** GameRegistry ******************************************************* */
@@ -72,20 +72,20 @@ void GameRegistry::DeleteGame(std::shared_ptr<Game> game) {
 void GameRegistry::DeleteGame(int id) {
     const std::lock_guard<std::mutex> lockGuard(games_mutex);
     games.erase(id);
-    OATPP_LOGI("GameRegistry", "[DeleteGame] id=%d", id);
+    OATPP_LOGD("GameRegistry", "[DeleteGame] id=%d", id);
 }
 
 void GameRegistry::ClearTimedout() {
     const std::lock_guard<std::mutex> lockGuard(games_mutex);
     for (auto it = games.begin(); it != games.end();) {
-        OATPP_LOGD("GameRegistry", "[ClearTimedout] checking %d", it->first);
         if (it->second->IsOutDated()) {
-            OATPP_LOGI("GameRegistry", "[ClearTimedout] erasing %d", it->first);
+            OATPP_LOGD("GameRegistry", "[ClearTimedout] erasing %d", it->first);
             it = games.erase(it);
         } else {
             ++it;
         }
     }
+    OATPP_LOGD("GameRegistry", "[ClearTimedout] Still %d games in registry.", games.size());
 }
 
 /* ***************************************** PlayerRegistry ******************************************************* */
@@ -110,14 +110,14 @@ std::shared_ptr<Player> PlayerRegistry::GetPlayer(int id) {
 void PlayerRegistry::ClearTimedout() {
     const std::lock_guard<std::mutex> lockGuard(players_mutex);
     for (auto it = players.begin(); it != players.end();) {
-        OATPP_LOGD("PlayerRegistry", "[ClearTimedout] checking %d", it->first);
         if (it->second->IsOutDated()) {
-            OATPP_LOGI("PlayerRegistry", "[ClearTimedout] erasing %d", it->first);
+            OATPP_LOGD("PlayerRegistry", "[ClearTimedout] erasing %d", it->first);
             it = players.erase(it);
         } else {
             ++it;
         }
     }
+    OATPP_LOGD("PlayerRegistry", "[ClearTimedout] Still %d players in registry.", players.size());
 }
 
 /* ***************************************** misc ******************************************************* */
@@ -125,11 +125,10 @@ void PlayerRegistry::ClearTimedout() {
 void runWatchThread() {
     OATPP_LOGD("runWatchThread", "Started");
     while (true) {
-        OATPP_LOGD("runWatchThread", "run....");
         PlayerRegistry::GetInstance().ClearTimedout();
         DrawDeckRegistry::GetInstance().ClearTimedout();
         GameRegistry::GetInstance().ClearTimedout();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 * 60 * 15));
     }
     OATPP_LOGD("runWatchThread", "Finished");
 }

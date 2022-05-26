@@ -6,8 +6,6 @@
 #include <vector>
 #include <random>
 
-#define OATPP_DISABLE_LOGD
-
 class Card {
 protected:
     Card(const std::string &desc);
