@@ -11,6 +11,8 @@
 #include OATPP_CODEGEN_BEGIN(ApiController) //<-- Begin Codegen
 
 class RootController : public oatpp::web::server::api::ApiController {
+private:
+    void LogAccess(const std::shared_ptr<IncomingRequest> &request, const std::string &endpoint);
 public:
     /**
      * Constructor with object mapper.
@@ -22,7 +24,7 @@ public:
 
 
     ENDPOINT("GET", "/", rootRedirect, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-//        LogAccess(request, "GET /");
+        LogAccess(request, "GET /");
         auto resp = createResponse(Status::CODE_301);
         resp->putHeader("Location", "/swagger/ui");
         return resp;
@@ -30,7 +32,7 @@ public:
 
 
     ENDPOINT("GET", "/v2/", root, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-//        LogAccess(request, "GET /v2/");
+        LogAccess(request, "GET /v2/");
         auto resp = createResponse(Status::CODE_301);
         resp->putHeader("Location", "/swagger/ui");
         return resp;
