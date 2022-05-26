@@ -78,7 +78,7 @@ public:
  */
     OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::swagger::Resources>, swaggerResources)([] {
         // Make sure to specify correct full path to oatpp-swagger/res folder !!!
-        return oatpp::swagger::Resources::loadResources("/usr//local/include/oatpp-1.3.0/bin/oatpp-swagger/res");
+        return oatpp::swagger::Resources::loadResources("/usr/local/include/oatpp-1.3.0/bin/oatpp-swagger/res");
     }());
 
 

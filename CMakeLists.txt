@@ -43,7 +43,7 @@ add_library(${project_name}-lib
         src/dto/DTOs.hpp
         src/logic/GameLogic.cpp
         src/logic/GameLogic.hpp
-        src/logic/Registries.cpp src/logic/Registries.hpp src/logic/Card.cpp src/logic/Card.hpp src/logic/Deck.cpp src/logic/Deck.hpp src/logic/HighscoreList.cpp src/logic/HighscoreList.hpp src/controller/RootController.cpp src/controller/RootController.hpp)
+        src/logic/Registries.cpp src/logic/Registries.hpp src/logic/Card.cpp src/logic/Card.hpp src/logic/Deck.cpp src/logic/Deck.hpp src/logic/HighscoreList.cpp src/logic/HighscoreList.hpp src/controller/RootController.cpp src/controller/RootController.hpp src/database/DBHighscore.cpp src/database/DBHighscore.hpp src/database/DTOs.hpp src/database/CouchdbHighscoreClient.hpp)
 
 ## link libs
 
