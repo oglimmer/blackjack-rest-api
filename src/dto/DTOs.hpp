@@ -146,6 +146,22 @@ class InsuranceRequest : public oatpp::DTO {
     DTO_FIELD(String, insurance);
 };
 
+class HighscoreElementResponse : public oatpp::DTO {
+    DTO_INIT(HighscoreElementResponse, DTO)
+
+    DTO_FIELD(Int32, pos);
+
+    DTO_FIELD(String, name);
+
+    DTO_FIELD(Int32, money);
+};
+
+class HighscoreResponse : public oatpp::DTO {
+    DTO_INIT(HighscoreResponse, DTO)
+
+    DTO_FIELD(Vector < Object < HighscoreElementResponse >>, highscores);
+};
+
 
 #include OATPP_CODEGEN_END(DTO)
 

@@ -8,6 +8,8 @@
 #include <vector>
 #include <mutex>
 
+#include "../dto/DTOs.hpp"
+
 class Highscore {
 private:
     int id;
@@ -37,7 +39,7 @@ private:
 public:
     void CheckHighScore(int id, int money, const std::string &name);
 
-    const std::unique_ptr<std::vector<std::string>> GetHighscores();
+    oatpp::data::mapping::type::DTOWrapper<HighscoreResponse> GetHighscores();
 };
 
 

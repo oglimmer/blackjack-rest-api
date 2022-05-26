@@ -343,16 +343,14 @@ public:
 
     ENDPOINT_INFO(highscore) {
         info->summary = "Returns the highscore.";
-        info->addResponse<String>(Status::CODE_200, "application/json");
+        info->addResponse < Object < HighscoreResponse >> (Status::CODE_200, "application/json");
     }
 
     ENDPOINT("GET", "/v2/highscore", highscore,
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
         LogAccess(request, "GET /v2/highscore");
         auto list = HighscoreList::GetInstance().GetHighscores();
-        std::stringstream s;
-        std::copy(list->begin(), list->end(), std::ostream_iterator<std::string>(s, "\r\n"));
-        return createResponse(Status::CODE_200, s.str());
+        return createDtoResponse(Status::CODE_200, list);
     }
 
 };

@@ -75,12 +75,17 @@ void HighscoreList::CheckHighScore(int id, int money, const std::string &name) {
     }
 }
 
-const std::unique_ptr<std::vector<std::string>> HighscoreList::GetHighscores() {
+oatpp::data::mapping::type::DTOWrapper<HighscoreResponse> HighscoreList::GetHighscores() {
     auto lg = std::lock_guard(mutex);
-    auto result = std::unique_ptr<std::vector<std::string>>(new std::vector<std::string>());
-    std::transform(highscore.begin(), highscore.end(), std::back_inserter(*result),
-                   [](const Highscore &hs) -> std::string {
-                       return hs.GetName() + " " + std::to_string(hs.GetMaxMoney());
-                   });
+    auto result = HighscoreResponse::Wrapper::createShared();
+    result->highscores = {};
+    for (int i = 0; i < highscore.size(); i++) {
+        const Highscore &hs = highscore.at(i);
+        auto respElement = HighscoreElementResponse::Wrapper::createShared();
+        respElement->money = hs.GetMaxMoney();
+        respElement->name = hs.GetName();
+        respElement->pos = i + 1;
+        result->highscores->push_back(respElement);
+    };
     return result;
 }
