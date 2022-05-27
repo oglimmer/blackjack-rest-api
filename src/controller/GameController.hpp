@@ -143,7 +143,7 @@ public:
     }
 
     ENDPOINT_INFO(placeBet) {
-        info->summary = "Places the initial bet on a game.";
+        info->summary = "Places the initial bet on a game. Minimum 1, maximum 1000.";
         info->addConsumes < Object < BetRequest >> ("application/json");
         info->addResponse < Object < BetResponse >> (Status::CODE_200, "application/json");
         info->pathParams["gameId"].description = "Game ID, retrieved by POST /v2/game";

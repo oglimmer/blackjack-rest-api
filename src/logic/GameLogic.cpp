@@ -153,6 +153,9 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
     if (betVal > player->GetCash() || betVal < 1) {
         throw GameException("Not enough money.");
     }
+    if (betVal > 1000) {
+        throw GameException("Max bet is 1000.");
+    }
 
     auto bet = std::shared_ptr<Bet>(new Bet(player, betVal));
     this->bets.push_back(bet);
