@@ -1,5 +1,4 @@
-#ifndef GameController_hpp
-#define GameController_hpp
+#pragma  once
 
 #include "dto/DTOs.hpp"
 #include "logic/GameLogic.hpp"
@@ -356,5 +355,3 @@ public:
 };
 
 #include OATPP_CODEGEN_END(ApiController) //<-- End Codegen
-
-#endif /* GameController_hpp */

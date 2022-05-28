@@ -1,5 +1,4 @@
-#ifndef AppComponent_hpp
-#define AppComponent_hpp
+#pragma  once
 
 #include "oatpp/web/server/HttpConnectionHandler.hpp"
 
@@ -83,5 +82,3 @@ public:
 
 
 };
-
-#endif /* AppComponent_hpp */

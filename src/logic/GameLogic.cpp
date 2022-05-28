@@ -86,6 +86,7 @@ Game::Game(std::shared_ptr<DrawDeck> drawDeck) :
 }
 
 void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
     if (!IsFollowActionsAllowed(bet, "hit")) {
         throw GameException("Action `hit` not allowed.");
     }
@@ -110,6 +111,7 @@ void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
 }
 
 void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
     if (bet->GetBet() > bet->GetPlayer()->GetCash()) {
         throw GameException("Not enough money to double.");
     }
@@ -141,6 +143,7 @@ void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse
 
 
 void Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse) {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
     if (!IsFollowActionsAllowed(bet, "stand")) {
         throw GameException("Action `stand` not allowed.");
     }
@@ -150,6 +153,7 @@ void Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse
 }
 
 void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wrapper &betResponse) {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
     if (betVal > player->GetCash() || betVal < 1) {
         throw GameException("Not enough money.");
     }
@@ -157,7 +161,7 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
         throw GameException("Max bet is 1000.");
     }
 
-    auto bet = std::shared_ptr<Bet>(new Bet(player, betVal));
+    auto bet = std::make_shared<Bet>(player, betVal);
     this->bets.push_back(bet);
     player->SubCash(betVal);
 
@@ -185,6 +189,7 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
 }
 
 void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse) {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
     if (bet->GetBet() > bet->GetPlayer()->GetCash()) {
         throw GameException("Not enough money to split.");
     }
@@ -207,15 +212,15 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
     // add a card to 1st bet
     const auto c1 = drawDeck->DrawCard();
     bet->GetDrawnCards()->AddCard(c1);
-    splitResponse->firstBetCard1 = bet->GetDrawnCards()->GetCards()[0]->GetDesc();
-    splitResponse->firstBetCard2 = bet->GetDrawnCards()->GetCards()[1]->GetDesc();
+    splitResponse->firstBetCard1 = bet->GetDrawnCards()->GetCard(0)->GetDesc();
+    splitResponse->firstBetCard2 = bet->GetDrawnCards()->GetCard(1)->GetDesc();
     splitResponse->firstBetTotal = bet->GetDrawnCards()->GetValue();
 
     // add a card 2nd bet
     const auto c2 = drawDeck->DrawCard();
     bet2nd->GetDrawnCards()->AddCard(c2);
-    splitResponse->secondBetCard1 = bet2nd->GetDrawnCards()->GetCards()[0]->GetDesc();
-    splitResponse->secondBetCard2 = bet2nd->GetDrawnCards()->GetCards()[1]->GetDesc();
+    splitResponse->secondBetCard1 = bet2nd->GetDrawnCards()->GetCard(0)->GetDesc();
+    splitResponse->secondBetCard2 = bet2nd->GetDrawnCards()->GetCard(1)->GetDesc();
     splitResponse->secondBetTotal = bet2nd->GetDrawnCards()->GetValue();
 
     WrapUp();
@@ -235,6 +240,7 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
 }
 
 void Game::Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse) {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
     if (!IsFollowActionsAllowed(bet, "insurance")) {
         throw GameException("Action `insurance` not allowed.");
     }
@@ -257,12 +263,79 @@ void Game::Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wr
     }
 }
 
-bool Game::IsFollowActionsAllowed(std::shared_ptr<Bet> bet, std::string action) {
+
+bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &response) const {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
+    const int playerTotalValue = bet->GetDrawnCards()->GetValue();
+    bool isDone = IsDone();
+    if (playerTotalValue > 21) {
+        response->result = "You busted!!!";
+    } else if (isDone) {
+        int totalValueDealer = drawnCardsDealer->GetValue();
+        if (bet->GetDrawnCards()->IsBlackJack() && drawnCardsDealer->IsBlackJack()) {
+            response->result = "You and the dealer have Blackjack!!";
+        } else if (bet->GetDrawnCards()->IsBlackJack()) {
+            response->result = "You have Blackjack!!";
+        } else if (drawnCardsDealer->IsBlackJack()) {
+            response->result = "The dealer has Blackjack!!";
+        } else if (totalValueDealer > 21 || playerTotalValue > totalValueDealer) {
+            response->result = "You won!!";
+        } else if (playerTotalValue == totalValueDealer) {
+            response->result = "Tie!!";
+        } else {
+            response->result = "You lost!!";
+        }
+    }
+    response->dealersAdditionalCard = {};
+    if (isDone) {
+        response->dealersSecondCard = dealerCardClosed->GetDesc();
+        response->dealerTotal = drawnCardsDealer->GetValue();
+        int pos = 0;
+        this->drawnCardsDealer->ForEachCard([&](const std::shared_ptr<Card> &card) {
+            if (pos > 1) {
+                response->dealersAdditionalCard->push_back(card->GetDesc());
+            }
+            pos++;
+        });
+    }
+    if (isDone) {
+        bet->SetResultChecked(true);
+    }
+    return isDone && allResultsChecked();
+}
+
+bool Game::IsOutDated() const {
+    const std::lock_guard<std::mutex> lockGuard(lastUsed_mutex);
+    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
+        OATPP_LOGD("Game", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
+    }
+    std::chrono::seconds later{LIFETIME_GAME};
+    auto now = std::chrono::system_clock::now();
+    auto t1 = now - later;
+    return this->lastUsed < t1;
+}
+
+void Game::Use() {
+    const std::lock_guard<std::mutex> lockGuard(lastUsed_mutex);
+    this->lastUsed = std::chrono::system_clock::now();
+}
+
+std::shared_ptr<Bet> Game::GetBet(int betId) {
+    const std::lock_guard<std::mutex> lockGuard(game_mutex);
+    return *std::find_if(bets.begin(), bets.end(),
+                         [&](const std::shared_ptr<Bet> &m) -> bool { return m->GetBetId() == betId; });
+}
+
+
+
+// private
+
+bool Game::IsFollowActionsAllowed(std::shared_ptr<Bet> bet, std::string action) const {
     auto allowedActions = AddFollowActions(bet);
     return std::find(allowedActions->begin(), allowedActions->end(), action) != allowedActions->end();
 }
 
-std::unique_ptr<std::vector<std::string>> Game::AddFollowActions(std::shared_ptr<Bet> bet) {
+std::unique_ptr<std::vector<std::string>> Game::AddFollowActions(std::shared_ptr<Bet> bet) const {
     auto actions = std::unique_ptr<std::vector<std::string>>(new std::vector<std::string>());
     if (bet->GetDrawnCards()->GetValue() < 21 && !bet->GetStand()) {
         if (dealerCardOpen->GetRank() == 11 && !bet->IsAskedForInsurance() &&
@@ -308,42 +381,6 @@ void Game::AdvanceDealer() {
     }
 }
 
-bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &response) const {
-    const int playerTotalValue = bet->GetDrawnCards()->GetValue();
-    bool isDone = IsDone();
-    if (playerTotalValue > 21) {
-        response->result = "You busted!!!";
-    } else if (isDone) {
-        int totalValueDealer = drawnCardsDealer->GetValue();
-        if (bet->GetDrawnCards()->IsBlackJack() && drawnCardsDealer->IsBlackJack()) {
-            response->result = "You and the dealer have Blackjack!!";
-        } else if (bet->GetDrawnCards()->IsBlackJack()) {
-            response->result = "You have Blackjack!!";
-        } else if (drawnCardsDealer->IsBlackJack()) {
-            response->result = "The dealer has Blackjack!!";
-        } else if (totalValueDealer > 21 || playerTotalValue > totalValueDealer) {
-            response->result = "You won!!";
-        } else if (playerTotalValue == totalValueDealer) {
-            response->result = "Tie!!";
-        } else {
-            response->result = "You lost!!";
-        }
-    }
-    response->dealersAdditionalCard = {};
-    if (isDone) {
-        response->dealersSecondCard = dealerCardClosed->GetDesc();
-        response->dealerTotal = drawnCardsDealer->GetValue();
-        std::vector<std::shared_ptr<Card>, std::allocator<std::shared_ptr<Card>>>::const_iterator first = this->drawnCardsDealer->GetCards().begin();
-        first += 2;
-        std::for_each(first, this->drawnCardsDealer->GetCards().end(), [&](const std::shared_ptr<Card> &card) {
-            response->dealersAdditionalCard->push_back(card->GetDesc());
-        });
-    }
-    if (isDone) {
-        bet->SetResultChecked(true);
-    }
-    return isDone && allResultsChecked();
-}
 
 bool Game::allResultsChecked() const {
     // all bets are checked if none is not-checked
@@ -385,26 +422,6 @@ bool Game::IsDone() const {
     return it == bets.end();
 }
 
-bool Game::IsOutDated() const {
-    if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
-        OATPP_LOGD("Game", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
-    }
-    std::chrono::seconds later{LIFETIME_GAME};
-    auto now = std::chrono::system_clock::now();
-    auto t1 = now - later;
-    return this->lastUsed < t1;
-}
-
-void Game::Use() {
-    this->lastUsed = std::chrono::system_clock::now();
-}
-
-std::shared_ptr<Bet> Game::GetBet(int betId) {
-    return *std::find_if(bets.begin(), bets.end(),
-                         [&](const std::shared_ptr<Bet> &m) -> bool { return m->GetBetId() == betId; });
-}
-
-
 /* ***************************************** Player ******************************************************* */
 
 #define START_CASH 1000
@@ -421,20 +438,24 @@ int Player::GetId() const {
 }
 
 int Player::GetCash() const {
+    const std::lock_guard<std::mutex> lockGuard(cash_mutex);
     return cash;
 }
 
 void Player::SubCash(int bet) {
+    const std::lock_guard<std::mutex> lockGuard(cash_mutex);
     cash -= bet;
 }
 
 void Player::AddCash(int bet) {
+    const std::lock_guard<std::mutex> lockGuard(cash_mutex);
     OATPP_LOGD("Player", "[AddCash] From %d add %d = %d", cash, bet, cash + bet);
     cash += bet;
     HighscoreList::GetInstance().CheckHighScore(id, cash, name);
 }
 
 bool Player::IsOutDated() const {
+    const std::lock_guard<std::mutex> lockGuard(lastUsed_mutex);
     if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
         OATPP_LOGD("Player", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
     }
@@ -445,5 +466,6 @@ bool Player::IsOutDated() const {
 }
 
 void Player::Use() {
+    const std::lock_guard<std::mutex> lockGuard(lastUsed_mutex);
     this->lastUsed = std::chrono::system_clock::now();
 }

@@ -1,7 +1,4 @@
-
-#ifndef BLACKJACK_DTOS_HPP
-#define BLACKJACK_DTOS_HPP
-
+#pragma  once
 
 #include "oatpp/web/client/ApiClient.hpp"
 #include "oatpp/core/macro/codegen.hpp"
@@ -34,5 +31,3 @@ class DBHighscoreDto : public oatpp::DTO {
 };
 
 #include OATPP_CODEGEN_END(DTO)
-
-#endif //BLACKJACK_DTOS_HPP

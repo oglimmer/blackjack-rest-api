@@ -1,6 +1,4 @@
-
-#ifndef BLACKJACK_DECK_HPP
-#define BLACKJACK_DECK_HPP
+#pragma  once
 
 #include <memory>
 #include <vector>
@@ -11,10 +9,13 @@
 class Deck {
 protected:
     std::vector<std::shared_ptr<Card>> cards;
+    mutable std::mutex cards_mutex;
 public:
     void AddCard(const std::shared_ptr<Card> card);
 
-    const std::vector<std::shared_ptr<Card>> &GetCards() const;
+    void ForEachCard(std::function<void(const std::shared_ptr<Card>&)> function);
+
+    std::shared_ptr<Card> GetCard(int pos) const;
 
     const std::shared_ptr<Card> DrawCard();
 };
@@ -23,8 +24,6 @@ public:
 class DrawnCards : public Deck {
 public:
     int GetValue() const;
-
-    int Size() const;
 
     bool Simple9_10_11() const;
 
@@ -36,7 +35,7 @@ public:
 class DrawDeck : public Deck {
 private:
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
-protected:
+    mutable std::mutex lastUsed_mutex;
     std::vector<std::shared_ptr<Card>> allCards;
 public:
     void AddCard(const std::shared_ptr<Card> card);
@@ -52,7 +51,7 @@ public:
 
 
 class Package {
-    SINGLETON(Package)
+SINGLETON(Package)
 
 private:
     const std::string SUITES[4];
@@ -69,5 +68,3 @@ public:
 
     bool IsCheat() const;
 };
-
-#endif //BLACKJACK_DECK_HPP

@@ -1,7 +1,6 @@
 
+#pragma  once
 
-#ifndef BLACKJACK_REGISTRIES_HPP
-#define BLACKJACK_REGISTRIES_HPP
 
 #include <thread>
 #include "util.h"
@@ -76,5 +75,3 @@ public:
 
 
 };
-
-#endif //BLACKJACK_REGISTRIES_HPP

@@ -1,7 +1,5 @@
+#pragma  once
 
-
-#ifndef BLACKJACK_ROOTCONTROLLER_HPP
-#define BLACKJACK_ROOTCONTROLLER_HPP
 
 #include "oatpp/web/server/api/ApiController.hpp"
 #include "oatpp/core/macro/codegen.hpp"
@@ -47,5 +45,3 @@ public:
 
 #include OATPP_CODEGEN_END(ApiController) //<-- End Codegen
 
-
-#endif //BLACKJACK_ROOTCONTROLLER_HPP

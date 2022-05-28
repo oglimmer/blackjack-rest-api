@@ -1,6 +1,4 @@
-
-#ifndef BLACKJACK_CARD_HPP
-#define BLACKJACK_CARD_HPP
+#pragma  once
 
 
 #include <vector>
@@ -53,5 +51,3 @@ public:
     virtual int GetRank() const override;
 };
 
-
-#endif //BLACKJACK_CARD_HPP

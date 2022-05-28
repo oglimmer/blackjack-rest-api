@@ -1,5 +1,4 @@
-#ifndef GameLogic_hpp
-#define GameLogic_hpp
+#pragma  once
 
 #include <map>
 #include <algorithm>
@@ -22,6 +21,8 @@ private:
     std::string name;
     int cash;
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
+    mutable std::mutex lastUsed_mutex;
+    mutable std::mutex cash_mutex;
 public:
     int GetId() const;
 
@@ -83,6 +84,8 @@ public:
     Game(std::shared_ptr<DrawDeck> drawDeck);
 
 private:
+    mutable std::mutex game_mutex;
+    mutable std::mutex lastUsed_mutex;
     std::shared_ptr<DrawDeck> drawDeck;
     std::unique_ptr<DrawnCards> drawnCardsDealer;
     std::shared_ptr<Card> dealerCardClosed;
@@ -90,34 +93,36 @@ private:
     std::vector<std::shared_ptr<Bet>> bets;
     std::chrono::time_point<std::chrono::system_clock> lastUsed = std::chrono::system_clock::now();
 public:
-    void PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wrapper &betResponse);
-
-    std::shared_ptr<Bet> GetBet(int betId);
-
     void Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse);
+
+    void DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse);
 
     void Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse);
 
-    void DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse);
+    void PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wrapper &betResponse);
 
     void Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse);
 
     void Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse);
 
+    bool AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &response) const;
+
     bool IsOutDated() const;
 
     void Use();
 
-    bool AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &response) const;
+    std::shared_ptr<Bet> GetBet(int betId);
 
 private:
-    std::unique_ptr<std::vector<std::string>> AddFollowActions(std::shared_ptr<Bet> bet);
+    bool IsFollowActionsAllowed(std::shared_ptr<Bet> bet, std::string action) const;
 
-    bool IsFollowActionsAllowed(std::shared_ptr<Bet> bet, std::string action);
+    std::unique_ptr<std::vector<std::string>> AddFollowActions(std::shared_ptr<Bet> bet) const;
 
     void WrapUp();
 
     void AdvanceDealer();
+
+    bool allResultsChecked() const;
 
     void Payout() const;
 
@@ -125,9 +130,5 @@ private:
 
     bool IsDone() const;
 
-    bool allResultsChecked() const;
-
 };
 
-
-#endif

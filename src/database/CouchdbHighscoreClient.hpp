@@ -1,7 +1,6 @@
 
+#pragma  once
 
-#ifndef BLACKJACK_COUCHDBHIGHSCORECLIENT_HPP
-#define BLACKJACK_COUCHDBHIGHSCORECLIENT_HPP
 
 
 #include "oatpp/web/client/ApiClient.hpp"
@@ -28,5 +27,3 @@ API_CLIENT_INIT(CouchdbHighscoreClient)
 
 #include OATPP_CODEGEN_END(ApiClient)
 
-
-#endif //BLACKJACK_COUCHDBHIGHSCORECLIENT_HPP

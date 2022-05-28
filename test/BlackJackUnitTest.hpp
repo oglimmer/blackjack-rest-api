@@ -1,6 +1,5 @@
+#pragma  once
 
-#ifndef BLACKJACK_BLACKJACKUNITTEST_HPP
-#define BLACKJACK_BLACKJACKUNITTEST_HPP
 
 #include "oatpp-test/UnitTest.hpp"
 
@@ -18,6 +17,3 @@ private:
     void testDoubleAce3();
 
 };
-
-
-#endif //BLACKJACK_BLACKJACKUNITTEST_HPP

@@ -1,11 +1,10 @@
-
-#ifndef BLACKJACK_UTIL_H
-#define BLACKJACK_UTIL_H
+#pragma  once
 
 #include <random>
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include "oatpp/web/server/api/ApiController.hpp"
 
 #define SINGLETON(clazz) \
     public: \
@@ -40,8 +39,3 @@ inline std::string toString(const std::chrono::time_point<std::chrono::system_cl
     ss << std::put_time( std::localtime( &t ), "%FT%T%z" );
     return ss.str();
 }
-
-
-#endif //BLACKJACK_UTIL_H
-
-

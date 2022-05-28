@@ -11,14 +11,22 @@
 /* ***************************************** Deck ******************************************************* */
 
 void Deck::AddCard(const std::shared_ptr<Card> card) {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     this->cards.push_back(card);
 }
 
-const std::vector<std::shared_ptr<Card>> &Deck::GetCards() const {
-    return this->cards;
+void Deck::ForEachCard(std::function<void(const std::shared_ptr<Card>&)> function) {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
+    std::for_each(this->cards.begin(), this->cards.end(), function);
+}
+
+std::shared_ptr<Card> Deck::GetCard(int pos) const {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
+    return cards.at(pos);
 }
 
 const std::shared_ptr<Card> Deck::DrawCard() {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     std::shared_ptr<Card> topCard = cards.back();
     OATPP_LOGD("Deck", "[DrawCard] Drew = %s", topCard->GetDesc().c_str());
     cards.pop_back();
@@ -28,6 +36,7 @@ const std::shared_ptr<Card> Deck::DrawCard() {
 /* ***************************************** DrawnCards ******************************************************* */
 
 int DrawnCards::GetValue() const {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
         OATPP_LOGD("DrawnCards", "[GetValue] cards.size=%d", cards.size());
         std::for_each(cards.begin(), cards.end(), [&](const std::shared_ptr<Card> &card) {
@@ -53,20 +62,20 @@ int DrawnCards::GetValue() const {
     return largestValueLess22 > 0 ? largestValueLess22 : smallestValueLarger21;
 }
 
-int DrawnCards::Size() const {
-    return cards.size();
-}
-
 bool DrawnCards::Simple9_10_11() const {
     int val = GetValue();
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     return val >= 9 && val <= 11 && cards.size() == 2;
 }
 
 bool DrawnCards::IsBlackJack() const {
-    return cards.size() == 2 && GetValue() == 21;
+    int val = GetValue();
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
+    return cards.size() == 2 && val == 21;
 }
 
 bool DrawnCards::IsSimplePair() const {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     return cards.size() == 2 && cards[0]->GetRank() == cards[1]->GetRank();
 }
 
@@ -74,16 +83,19 @@ bool DrawnCards::IsSimplePair() const {
 
 void DrawDeck::AddCard(const std::shared_ptr<Card> card) {
     Deck::AddCard(card);
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     this->allCards.push_back(card);
 }
 
 void DrawDeck::shuffle() {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     if (!Package::GetInstance().IsCheat()) {
         std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
     }
 }
 
 void DrawDeck::ReshuffleIfNeeded() {
+    const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     if (cards.size() < 52 && !Package::GetInstance().IsCheat()) {
         cards.clear();
         cards.insert(cards.end(), allCards.begin(), allCards.end());
@@ -92,6 +104,7 @@ void DrawDeck::ReshuffleIfNeeded() {
 }
 
 bool DrawDeck::IsOutDated() const {
+    const std::lock_guard<std::mutex> lock_guard(lastUsed_mutex);
     if (oatpp::base::Environment::getLogger()->isLogPriorityEnabled(oatpp::base::Logger::PRIORITY_D)) {
         OATPP_LOGD("DrawDeck", "[IsOutDated] Created at %s", toString(this->lastUsed).c_str());
     }
@@ -102,6 +115,7 @@ bool DrawDeck::IsOutDated() const {
 }
 
 void DrawDeck::Use() {
+    const std::lock_guard<std::mutex> lock_guard(lastUsed_mutex);
     this->lastUsed = std::chrono::system_clock::now();
 }
 

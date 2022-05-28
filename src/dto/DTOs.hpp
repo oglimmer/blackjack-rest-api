@@ -1,5 +1,4 @@
-#ifndef DTOs_hpp
-#define DTOs_hpp
+#pragma  once
 
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/Types.hpp"
@@ -164,5 +163,3 @@ class HighscoreResponse : public oatpp::DTO {
 
 
 #include OATPP_CODEGEN_END(DTO)
-
-#endif /* DTOs_hpp */

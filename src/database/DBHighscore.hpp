@@ -1,6 +1,5 @@
+#pragma  once
 
-#ifndef BLACKJACK_DBHIGHSCORE_HPP
-#define BLACKJACK_DBHIGHSCORE_HPP
 
 #include "controller/GameController.hpp"
 
@@ -41,5 +40,3 @@ public:
 
 };
 
-
-#endif //BLACKJACK_DBHIGHSCORE_HPP

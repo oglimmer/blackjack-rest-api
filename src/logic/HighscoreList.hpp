@@ -1,6 +1,5 @@
+#pragma  once
 
-#ifndef BLACKJACK_HIGHSCORELIST_HPP
-#define BLACKJACK_HIGHSCORELIST_HPP
 
 #include "util.h"
 
@@ -42,5 +41,3 @@ public:
     oatpp::data::mapping::type::DTOWrapper<HighscoreResponse> GetHighscores();
 };
 
-
-#endif //BLACKJACK_HIGHSCORELIST_HPP

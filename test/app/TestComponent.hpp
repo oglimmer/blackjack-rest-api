@@ -1,5 +1,5 @@
-#ifndef TestComponent_htpp
-#define TestComponent_htpp
+#pragma  once
+
 
 #include "oatpp/web/server/HttpConnectionHandler.hpp"
 
@@ -63,6 +63,3 @@ public:
     }());
 
 };
-
-
-#endif // TestComponent_htpp

@@ -1,6 +1,5 @@
+#pragma  once
 
-#ifndef CreatePlayerApiTestClient_hpp
-#define CreatePlayerApiTestClient_hpp
 
 #include "oatpp/web/client/ApiClient.hpp"
 #include "oatpp/core/macro/codegen.hpp"
@@ -38,5 +37,3 @@ API_CLIENT_INIT(CreatePlayerApiTestClient)
 
 /* End Api Client code generation */
 #include OATPP_CODEGEN_END(ApiClient)
-
-#endif // CreatePlayerApiTestClient_hpp

@@ -1,5 +1,4 @@
-#ifndef GameControllerTest_hpp
-#define GameControllerTest_hpp
+#pragma  once
 
 #include "oatpp-test/UnitTest.hpp"
 
@@ -11,5 +10,3 @@ public:
     void onRun() override;
 
 };
-
-#endif // GameControllerTest_hpp
