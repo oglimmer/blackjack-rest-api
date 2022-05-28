@@ -76,4 +76,4 @@ curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{"ins
 ## When the 'followActions' are [] use this to get the end result
 curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}
 
-Use: https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh to play via bash! (needs curl and jq installed)
+Use: https://raw.githubusercontent.com/oglimmer/blackjack-rest-api/master/play.sh to play via bash! (needs curl and jq installed)
