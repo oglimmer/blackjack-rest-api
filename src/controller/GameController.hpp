@@ -119,7 +119,7 @@ public:
     ENDPOINT_INFO(createGame) {
         info->summary = "Creates a new Game.";
         info->addConsumes < Object < CreateGameRequest >> ("application/json");
-        info->addResponse < Object < CreateDeckResponse >> (Status::CODE_200, "application/json");
+        info->addResponse < Object < CreateGameResponse >> (Status::CODE_200, "application/json");
     }
 
     ENDPOINT("POST", "/v2/game", createGame,
