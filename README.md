@@ -12,13 +12,13 @@ Now use `SERVER_BASE=http://localhost:8000/v2 ./play.sh`.
 If you have Docker installed you can play via:
 
 ```bash
-docker run -it --rm livepeerci/curl-jq bash -c "$(curl -sfLS https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh)"
+docker run -it --rm livepeerci/curl-jq bash -c "$(curl -sfLS https://raw.githubusercontent.com/oglimmer/blackjack-rest-api/master/play.sh)"
 ```
 
 To play on your local terminal, you need to have curl and jq installed.
 
 ```bash
-bash -c "$(curl -sfLS https://raw.githubusercontent.com/oglimmer/blackjack-client-server/master/play.sh)"
+bash -c "$(curl -sfLS https://raw.githubusercontent.com/oglimmer/blackjack-rest-api/master/play.sh)"
 ```
 
 # Build
