@@ -23,7 +23,32 @@ bash -c "$(curl -sfLS https://raw.githubusercontent.com/oglimmer/blackjack-rest-
 
 # Build
 
-**You need to have oat++ installed, see https://oatpp.io/docs/installation/unix-linux/**
+## Prerequisites
+
+You need to have oat++ and oat-swagger installed, see https://oatpp.io/docs/installation/unix-linux/ 
+
+For Unix/macOS do this:
+
+```
+# oatpp
+git clone https://github.com/oatpp/oatpp.git --depth=1
+cd oatpp/
+mkdir build
+cd build
+cmake ..
+make install
+
+# oatpp-swagger
+git clone https://github.com/oglimmer/oatpp-swagger.git --depth=1
+cd oatpp-swagger/
+mkdir build
+cd build
+make install
+```
+
+## Blackjack
+
+This is how you build blackjack itself:
 
 ```bash
 mkdir build && cd build
