@@ -35,6 +35,8 @@ public:
     bool IsOutDated() const;
 
     void Use();
+
+    const std::string &GetName() const;
 };
 
 class Bet {

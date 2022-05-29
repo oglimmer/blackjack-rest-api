@@ -106,6 +106,7 @@ class GetPlayerResponse : public oatpp::DTO {
     DTO_INIT(GetPlayerResponse, DTO)
 
     DTO_FIELD(Int32, cash);
+    DTO_FIELD(String, name);
 };
 
 

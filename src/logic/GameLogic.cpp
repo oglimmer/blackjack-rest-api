@@ -469,3 +469,7 @@ void Player::Use() {
     const std::lock_guard<std::mutex> lockGuard(lastUsed_mutex);
     this->lastUsed = std::chrono::system_clock::now();
 }
+
+const std::string &Player::GetName() const {
+    return this->name;
+}

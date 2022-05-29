@@ -98,6 +98,7 @@ public:
 
         auto dto = GetPlayerResponse::createShared();
         dto->cash = player->GetCash();
+        dto->name = player->GetName();
         return createDtoResponse(Status::CODE_200, dto);
     }
 
