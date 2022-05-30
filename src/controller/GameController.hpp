@@ -65,7 +65,7 @@ private:
 
 public:
 
-
+    ADD_CORS(createPlayer)
     ENDPOINT_INFO(createPlayer) {
         info->summary = "Creates a new Player object";
         info->addConsumes < Object < CreatePlayerRequest >> ("application/json");
@@ -80,6 +80,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(getPlayer)
     ENDPOINT_INFO(getPlayer) {
         info->summary = "Returns the cash a player owns";
         info->addResponse < Object < GetPlayerResponse >> (Status::CODE_200, "application/json");
@@ -102,6 +103,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(createDrawDeck)
     ENDPOINT_INFO(createDrawDeck) {
         info->summary = "Creates a new Deck object";
         info->addResponse < Object < CreateDeckResponse >> (Status::CODE_200, "application/json");
@@ -117,6 +119,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(createGame)
     ENDPOINT_INFO(createGame) {
         info->summary = "Creates a new Game.";
         info->addConsumes < Object < CreateGameRequest >> ("application/json");
@@ -142,6 +145,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(placeBet)
     ENDPOINT_INFO(placeBet) {
         info->summary = "Places the initial bet on a game. Minimum 1, maximum 1000.";
         info->addConsumes < Object < BetRequest >> ("application/json");
@@ -169,6 +173,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(doubleBet)
     ENDPOINT_INFO(doubleBet) {
         info->summary = "Doubles the bet and takes another card. This option is only available when the first two cards are 9,10,11 in total.";
         info->addResponse < Object < HitResponse >> (Status::CODE_200, "application/json");
@@ -198,6 +203,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(split)
     ENDPOINT_INFO(split) {
         info->summary = "Split your hand into two hands. Also draws 2 additional cards for each hand. This option is only available when the first two cards are of the same rank.";
         info->addResponse < Object < SplitResponse >> (Status::CODE_200, "application/json");
@@ -227,6 +233,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(hit)
     ENDPOINT_INFO(hit) {
         info->summary = "Hit - takes another card.";
         info->addResponse < Object < HitResponse >> (Status::CODE_200, "application/json");
@@ -256,6 +263,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(stand)
     ENDPOINT_INFO(stand) {
         info->summary = "Stand - Finishes the game, thus let's the dealer take cards and finally pays the winner.";
         info->addResponse < Object < StandResponse >> (Status::CODE_200, "application/json");
@@ -284,6 +292,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(insurance)
     ENDPOINT_INFO(insurance) {
         info->summary = "Answers the dealer's question for an insurance. This option is only available when the dealer's first card as an Ace.";
         info->addResponse < Object < StandResponse >> (Status::CODE_200, "application/json");
@@ -314,6 +323,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(getBet)
     ENDPOINT_INFO(getBet) {
         info->summary = "Returns information about the dealer's cards, the dealer's total Value and who won the game.";
         info->addResponse < Object < BetGetResponse >> (Status::CODE_200, "application/json");
@@ -341,6 +351,7 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    ADD_CORS(highscore)
     ENDPOINT_INFO(highscore) {
         info->summary = "Returns the highscore.";
         info->addResponse < Object < HighscoreResponse >> (Status::CODE_200, "application/json");
