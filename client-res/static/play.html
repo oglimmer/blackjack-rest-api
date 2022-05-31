@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Nerdjack - Blackjack for Nerds ;)</title>
+<style type="text/css" media="screen">
+    #editor { 
+        position: relative;
+        width: 800px;
+        height: 500px;
+    }
+</style>
+</head>
+<body>
+
+    <h1>Nerdjack - Blackjack for Nerds ;)</h1>
+
+<div>
+    <div>
+        Cash:
+        <span id="cash"></span>
+    </div>
+    <div>
+        Info:
+        <span id="info"></span>
+    </div>
+</div>
+
+<div id="editor">
+
+function bet(cash) {
+    return Math.min(1000, cash);
+}
+function command(data) {
+    /*
+    data.card1 : string // your first card's description (e.g. 8-of-spades)
+    data.card2 : string // your second card's description (e.g. ace-of-spades)
+    data.dealersCard : string // the dealer's open card description
+    data.yourTotal : number // the total value of your hand
+    */
+    if(data.yourTotal < 17 && data.followActions.includes("hit")) {
+        return "HIT";
+    }
+    return "STAND";
+    // other options: "DOUBLE" or "SPLIT" if available in data.followActions
+}
+function insurance(data) {
+    /*
+    data.card1 : string // your first card's description (e.g. 8-of-spades)
+    data.card2 : string // your second card's description (e.g. ace-of-spades)
+    data.dealersCard : string // the dealer's open card description
+    data.yourTotal : number // the total value of your hand
+    */
+    return false;
+}
+</div>
+<div>
+    Your name:<input id="playerName" />
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
+</div>
+
+<script src="./ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/javascript");
+</script>
+<script src="./bundle.js"></script>
+</body>
+</html>

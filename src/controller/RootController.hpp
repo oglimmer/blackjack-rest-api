@@ -24,7 +24,7 @@ public:
     ENDPOINT("GET", "/", rootRedirect, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
         LogAccess(request, "GET /");
         auto resp = createResponse(Status::CODE_301);
-        resp->putHeader("Location", "/swagger/ui");
+        resp->putHeader("Location", "/index.html");
         return resp;
     }
 

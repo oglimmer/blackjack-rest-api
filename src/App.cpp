@@ -1,5 +1,6 @@
 #include "./controller/GameController.hpp"
 #include "./controller/RootController.hpp"
+#include "./controller/StaticController.hpp"
 #include "./AppComponent.hpp"
 
 #include "oatpp/network/Server.hpp"
@@ -18,6 +19,7 @@ void run() {
     const std::shared_ptr<GameController> &controller = std::make_shared<GameController>();
     router->addController(controller);
     router->addController(std::make_shared<RootController>());
+    router->addController(std::make_shared<StaticController>());
 
     /* Create SwaggerController and add all of its endpoints to router */
     oatpp::web::server::api::Endpoints docEndpoints;
