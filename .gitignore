@@ -45,3 +45,4 @@ cmake-build-debug/
 **/.DS_Store
 .vscode
 
+client-res/dist/
