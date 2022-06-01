@@ -33,6 +33,9 @@ RUN cd /home/blackjack &&  \
     make &&  \
     make test
 
+RUN git clone https://github.com/ajaxorg/ace-builds/ /home/ace && \
+    cp -r /home/ace/src-min /home/blackjack/client-res/static/ace
+
 FROM debian:11-slim
 
 COPY --from=0 /home/blackjack/client-res/static /usr/local/client

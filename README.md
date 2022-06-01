@@ -46,11 +46,23 @@ cd build
 make install
 ```
 
+For the UI you also need to have node and npm installed.
+
 ## Blackjack
 
 This is how you build blackjack itself:
 
 ```bash
+# get the Ace editor
+git clone https://github.com/ajaxorg/ace-builds/ /tmp/ace
+cp -r /tmp/ace/src-min static/ace
+rm -rf /tmp/ace
+# build UI
+cd client-res
+npm i
+browserify src/main.js -o static/bundle.js -t [ babelify ]
+cd ..
+# build C++
 mkdir build && cd build
 cmake ..
 make
@@ -69,6 +81,8 @@ To play (and thus test the server)
 ```bash
 SERVER_BASE=http://localhost:8000/v2 ./play.sh
 ```
+
+or open a browser at http://localhost:8000
 
 # How to play via curl
 
