@@ -6,7 +6,7 @@
     #editor { 
         position: relative;
         width: 800px;
-        height: 500px;
+        height: 900px;
     }
 </style>
 </head>
@@ -20,43 +20,66 @@
         <span id="cash"></span>
     </div>
     <div>
+        Round:
+        <span id="round"></span>
+    </div>
+    <div style="height: 48px">
         Info:
         <span id="info"></span>
     </div>
-</div>
-
-<div id="editor">
-
-function bet(cash) {
-    return Math.min(1000, cash);
-}
-function command(data) {
-    /*
-    data.card1 : string // your first card's description (e.g. 8-of-spades)
-    data.card2 : string // your second card's description (e.g. ace-of-spades)
-    data.dealersCard : string // the dealer's open card description
-    data.yourTotal : number // the total value of your hand
-    */
-    if(data.yourTotal < 17 && data.followActions.includes("hit")) {
-        return "HIT";
-    }
-    return "STAND";
-    // other options: "DOUBLE" or "SPLIT" if available in data.followActions
-}
-function insurance(data) {
-    /*
-    data.card1 : string // your first card's description (e.g. 8-of-spades)
-    data.card2 : string // your second card's description (e.g. ace-of-spades)
-    data.dealersCard : string // the dealer's open card description
-    data.yourTotal : number // the total value of your hand
-    */
-    return false;
-}
+    <div style="height: 48px">
+        Stats:
+        <span id="stats"></span>
+    </div>
 </div>
 <div>
-    Your name:<input id="playerName" />
+    Your name: <input id="playerName" />
     <button id="start">Start</button>
-    <button id="stop">Stop</button>
+    <button id="start100">Start 100x</button>
+    <button id="stop" disabled>Stop</button>
+</div>
+<div id="editor">function bet(cash, stats) {
+/* return how much you want to bet (1 to 1000) /*/
+    return Math.min(100, cash);
+}
+function command(data, stats) {
+/* data contains:
+    yourCards // array of string, cards you have drawn (try: stats.c = data.yourCards)
+    dealerCards // array of string, cards the dealer as open
+    yourTotal // number, your highest total at the moment
+    followActions // array of string, actions you can choose from: hit, stand, double, split
+*/
+    // Dummy logic: just do what you can ;)
+    if (data.followActions.includes("double")){
+        return "double";
+    } else if (data.followActions.includes("split")) {
+        return "split";
+    } else if (data.followActions.includes("hit")) {
+        return "hit";
+    }
+    return "stand";
+}
+function insurance(data, stats) {
+/* data contains:
+    yourCards // array of string, cards you have drawn
+    dealerCards // array of string, cards the dealer as open, must be any single Ace
+    yourTotal // number, your highest total at the moment
+*/
+    return false; // return if you want to buy an insurance
+}
+function result(data, stats) {
+/* data contains:
+    yourCards // array of string, all cards you have drawn
+    dealerCards // array of string, all cards the dealer has drawn
+    yourTotal // number, your final value
+    result // string, the result
+*/
+    // this method is for collection statistics only. No decision as to be made here.
+}
+
+/* the object behind the stats parameter is always the same object, so you can collect
+   statistics during the entire runtime of Start or Start100x. The content of stats is
+   written to the stats div. */
 </div>
 
 <script src="./ace/ace.js" type="text/javascript" charset="utf-8"></script>

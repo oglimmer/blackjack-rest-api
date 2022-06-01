@@ -201,6 +201,7 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
     }
 
     auto bet2nd = std::shared_ptr<Bet>(new Bet(bet->GetPlayer(), bet->GetBet()));
+    bet2nd->SetAskedForInsurance(true);
     this->bets.push_back(bet2nd);
     bet->GetPlayer()->SubCash(bet->GetBet());
     splitResponse->secondBetId = bet2nd->GetBetId();
@@ -285,6 +286,8 @@ bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &respon
         } else {
             response->result = "You lost!!";
         }
+    } else {
+        response->result = "In progress";
     }
     response->dealersAdditionalCard = {};
     if (isDone) {

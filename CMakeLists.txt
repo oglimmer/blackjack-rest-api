@@ -68,7 +68,12 @@ add_executable(${project_name}-test
         test/tests.cpp
         test/GameControllerSimpleWinTest.cpp
         test/GameControllerSimpleWinTest.hpp
-        test/BlackJackUnitTest.cpp test/BlackJackUnitTest.hpp test/GameControllerDealerBlackJackTest.cpp test/GameControllerDealerBlackJackTest.hpp)
+        test/BlackJackUnitTest.cpp
+        test/BlackJackUnitTest.hpp
+        test/GameControllerDealerBlackJackTest.cpp
+        test/GameControllerDealerBlackJackTest.hpp
+        test/GameControllerInsuranceTest.cpp
+        test/GameControllerInsuranceTest.hpp)
 
 target_link_libraries(${project_name}-test ${project_name}-lib)
 add_dependencies(${project_name}-test ${project_name}-lib)

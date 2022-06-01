@@ -5,7 +5,7 @@ docker build --tag blackjack .
 docker run --rm -p 8000:8000 blackjack
 ```
 
-Now use `SERVER_BASE=http://localhost:8000/v2 ./play.sh`.
+Now use `SERVER_BASE=http://localhost:8000/v2 ./play.sh` to play via command line or use a browser at `http://localhost:8000/play.html` 
 
 # Play against the official server bj.oglimmer.de
 

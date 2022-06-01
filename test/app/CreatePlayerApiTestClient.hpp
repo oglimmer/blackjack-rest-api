@@ -29,6 +29,15 @@ API_CLIENT_INIT(CreatePlayerApiTestClient)
              PATH(Int32, betId),
              PATH(Int32, gameId))
 
+    API_CALL("POST", "/v2/game/{gameId}/bet/{betId}/insurance", insurance,
+             PATH(Int32, betId),
+             PATH(Int32, gameId),
+             BODY_DTO(Object < InsuranceRequest > , insuranceRequest))
+
+    API_CALL("POST", "/v2/game/{gameId}/bet/{betId}/split", split,
+             PATH(Int32, betId),
+             PATH(Int32, gameId))
+
     API_CALL("GET", "/v2/game/{gameId}/bet/{betId}", getResult,
              PATH(Int32, betId),
              PATH(Int32, gameId))

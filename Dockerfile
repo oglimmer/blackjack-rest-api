@@ -1,7 +1,7 @@
 FROM debian:11-slim
 
 RUN apt update && \
-    apt install -y cmake g++ git
+    apt install -y cmake g++ git nodejs npm
 
 RUN cd /home &&  \
     git clone https://github.com/oatpp/oatpp.git --depth=1 &&  \
@@ -21,7 +21,6 @@ RUN cd /home &&  \
 COPY . /home/blackjack
 
 RUN cd /home/blackjack/client-res && \
-    apt install -y nodejs npm && \
     npm i && \
     npm run static
 

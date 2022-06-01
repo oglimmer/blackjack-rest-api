@@ -63,3 +63,9 @@ public:
     }());
 
 };
+
+#define OATPP_ASSERTE(EXP, INFO) \
+if(!(EXP)) { \
+  OATPP_LOGE("\033[1mASSERT\033[0m[\033[1;31mFAILED\033[0m]", "%s [was:%s]", #EXP, INFO); \
+  exit(EXIT_FAILURE); \
+}

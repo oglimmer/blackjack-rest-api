@@ -1933,7 +1933,273 @@ function numberIsNaN (obj) {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"base64-js":1,"buffer":3,"ieee754":6}],4:[function(require,module,exports){
+},{"base64-js":1,"buffer":3,"ieee754":4}],4:[function(require,module,exports){
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+  var e, m
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var nBits = -7
+  var i = isLE ? (nBytes - 1) : 0
+  var d = isLE ? -1 : 1
+  var s = buffer[offset + i]
+
+  i += d
+
+  e = s & ((1 << (-nBits)) - 1)
+  s >>= (-nBits)
+  nBits += eLen
+  for (; nBits > 0; e = (e * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  m = e & ((1 << (-nBits)) - 1)
+  e >>= (-nBits)
+  nBits += mLen
+  for (; nBits > 0; m = (m * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  if (e === 0) {
+    e = 1 - eBias
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity)
+  } else {
+    m = m + Math.pow(2, mLen)
+    e = e - eBias
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+}
+
+exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+  var e, m, c
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+  var i = isLE ? 0 : (nBytes - 1)
+  var d = isLE ? 1 : -1
+  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+
+  value = Math.abs(value)
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0
+    e = eMax
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2)
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--
+      c *= 2
+    }
+    if (e + eBias >= 1) {
+      value += rt / c
+    } else {
+      value += rt * Math.pow(2, 1 - eBias)
+    }
+    if (value * c >= 2) {
+      e++
+      c /= 2
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0
+      e = eMax
+    } else if (e + eBias >= 1) {
+      m = ((value * c) - 1) * Math.pow(2, mLen)
+      e = e + eBias
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+      e = 0
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+  e = (e << mLen) | m
+  eLen += mLen
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+  buffer[offset + i - d] |= s * 128
+}
+
+},{}],5:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+// If obj.hasOwnProperty has been overridden, then calling
+// obj.hasOwnProperty(prop) will break.
+// See: https://github.com/joyent/node/issues/1707
+function hasOwnProperty(obj, prop) {
+  return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
+module.exports = function(qs, sep, eq, options) {
+  sep = sep || '&';
+  eq = eq || '=';
+  var obj = {};
+
+  if (typeof qs !== 'string' || qs.length === 0) {
+    return obj;
+  }
+
+  var regexp = /\+/g;
+  qs = qs.split(sep);
+
+  var maxKeys = 1000;
+  if (options && typeof options.maxKeys === 'number') {
+    maxKeys = options.maxKeys;
+  }
+
+  var len = qs.length;
+  // maxKeys <= 0 means that we should not limit keys count
+  if (maxKeys > 0 && len > maxKeys) {
+    len = maxKeys;
+  }
+
+  for (var i = 0; i < len; ++i) {
+    var x = qs[i].replace(regexp, '%20'),
+        idx = x.indexOf(eq),
+        kstr, vstr, k, v;
+
+    if (idx >= 0) {
+      kstr = x.substr(0, idx);
+      vstr = x.substr(idx + 1);
+    } else {
+      kstr = x;
+      vstr = '';
+    }
+
+    k = decodeURIComponent(kstr);
+    v = decodeURIComponent(vstr);
+
+    if (!hasOwnProperty(obj, k)) {
+      obj[k] = v;
+    } else if (isArray(obj[k])) {
+      obj[k].push(v);
+    } else {
+      obj[k] = [obj[k], v];
+    }
+  }
+
+  return obj;
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+},{}],6:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+var stringifyPrimitive = function(v) {
+  switch (typeof v) {
+    case 'string':
+      return v;
+
+    case 'boolean':
+      return v ? 'true' : 'false';
+
+    case 'number':
+      return isFinite(v) ? v : '';
+
+    default:
+      return '';
+  }
+};
+
+module.exports = function(obj, sep, eq, name) {
+  sep = sep || '&';
+  eq = eq || '=';
+  if (obj === null) {
+    obj = undefined;
+  }
+
+  if (typeof obj === 'object') {
+    return map(objectKeys(obj), function(k) {
+      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+      if (isArray(obj[k])) {
+        return map(obj[k], function(v) {
+          return ks + encodeURIComponent(stringifyPrimitive(v));
+        }).join(sep);
+      } else {
+        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+      }
+    }).join(sep);
+
+  }
+
+  if (!name) return '';
+  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+         encodeURIComponent(stringifyPrimitive(obj));
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+function map (xs, f) {
+  if (xs.map) return xs.map(f);
+  var res = [];
+  for (var i = 0; i < xs.length; i++) {
+    res.push(f(xs[i], i));
+  }
+  return res;
+}
+
+var objectKeys = Object.keys || function (obj) {
+  var res = [];
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
+  }
+  return res;
+};
+
+},{}],7:[function(require,module,exports){
+'use strict';
+
+exports.decode = exports.parse = require('./decode');
+exports.encode = exports.stringify = require('./encode');
+
+},{"./decode":5,"./encode":6}],8:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -2110,7 +2376,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],5:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = stringify
 stringify.default = stringify
 stringify.stable = deterministicStringify
@@ -2341,273 +2607,7 @@ function replaceGetterValues (replacer) {
   }
 }
 
-},{}],6:[function(require,module,exports){
-/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
-exports.read = function (buffer, offset, isLE, mLen, nBytes) {
-  var e, m
-  var eLen = (nBytes * 8) - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var nBits = -7
-  var i = isLE ? (nBytes - 1) : 0
-  var d = isLE ? -1 : 1
-  var s = buffer[offset + i]
-
-  i += d
-
-  e = s & ((1 << (-nBits)) - 1)
-  s >>= (-nBits)
-  nBits += eLen
-  for (; nBits > 0; e = (e * 256) + buffer[offset + i], i += d, nBits -= 8) {}
-
-  m = e & ((1 << (-nBits)) - 1)
-  e >>= (-nBits)
-  nBits += mLen
-  for (; nBits > 0; m = (m * 256) + buffer[offset + i], i += d, nBits -= 8) {}
-
-  if (e === 0) {
-    e = 1 - eBias
-  } else if (e === eMax) {
-    return m ? NaN : ((s ? -1 : 1) * Infinity)
-  } else {
-    m = m + Math.pow(2, mLen)
-    e = e - eBias
-  }
-  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
-}
-
-exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
-  var e, m, c
-  var eLen = (nBytes * 8) - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
-  var i = isLE ? 0 : (nBytes - 1)
-  var d = isLE ? 1 : -1
-  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
-
-  value = Math.abs(value)
-
-  if (isNaN(value) || value === Infinity) {
-    m = isNaN(value) ? 1 : 0
-    e = eMax
-  } else {
-    e = Math.floor(Math.log(value) / Math.LN2)
-    if (value * (c = Math.pow(2, -e)) < 1) {
-      e--
-      c *= 2
-    }
-    if (e + eBias >= 1) {
-      value += rt / c
-    } else {
-      value += rt * Math.pow(2, 1 - eBias)
-    }
-    if (value * c >= 2) {
-      e++
-      c /= 2
-    }
-
-    if (e + eBias >= eMax) {
-      m = 0
-      e = eMax
-    } else if (e + eBias >= 1) {
-      m = ((value * c) - 1) * Math.pow(2, mLen)
-      e = e + eBias
-    } else {
-      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
-      e = 0
-    }
-  }
-
-  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
-
-  e = (e << mLen) | m
-  eLen += mLen
-  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
-
-  buffer[offset + i - d] |= s * 128
-}
-
-},{}],7:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-'use strict';
-
-// If obj.hasOwnProperty has been overridden, then calling
-// obj.hasOwnProperty(prop) will break.
-// See: https://github.com/joyent/node/issues/1707
-function hasOwnProperty(obj, prop) {
-  return Object.prototype.hasOwnProperty.call(obj, prop);
-}
-
-module.exports = function(qs, sep, eq, options) {
-  sep = sep || '&';
-  eq = eq || '=';
-  var obj = {};
-
-  if (typeof qs !== 'string' || qs.length === 0) {
-    return obj;
-  }
-
-  var regexp = /\+/g;
-  qs = qs.split(sep);
-
-  var maxKeys = 1000;
-  if (options && typeof options.maxKeys === 'number') {
-    maxKeys = options.maxKeys;
-  }
-
-  var len = qs.length;
-  // maxKeys <= 0 means that we should not limit keys count
-  if (maxKeys > 0 && len > maxKeys) {
-    len = maxKeys;
-  }
-
-  for (var i = 0; i < len; ++i) {
-    var x = qs[i].replace(regexp, '%20'),
-        idx = x.indexOf(eq),
-        kstr, vstr, k, v;
-
-    if (idx >= 0) {
-      kstr = x.substr(0, idx);
-      vstr = x.substr(idx + 1);
-    } else {
-      kstr = x;
-      vstr = '';
-    }
-
-    k = decodeURIComponent(kstr);
-    v = decodeURIComponent(vstr);
-
-    if (!hasOwnProperty(obj, k)) {
-      obj[k] = v;
-    } else if (isArray(obj[k])) {
-      obj[k].push(v);
-    } else {
-      obj[k] = [obj[k], v];
-    }
-  }
-
-  return obj;
-};
-
-var isArray = Array.isArray || function (xs) {
-  return Object.prototype.toString.call(xs) === '[object Array]';
-};
-
-},{}],8:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-'use strict';
-
-var stringifyPrimitive = function(v) {
-  switch (typeof v) {
-    case 'string':
-      return v;
-
-    case 'boolean':
-      return v ? 'true' : 'false';
-
-    case 'number':
-      return isFinite(v) ? v : '';
-
-    default:
-      return '';
-  }
-};
-
-module.exports = function(obj, sep, eq, name) {
-  sep = sep || '&';
-  eq = eq || '=';
-  if (obj === null) {
-    obj = undefined;
-  }
-
-  if (typeof obj === 'object') {
-    return map(objectKeys(obj), function(k) {
-      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
-      if (isArray(obj[k])) {
-        return map(obj[k], function(v) {
-          return ks + encodeURIComponent(stringifyPrimitive(v));
-        }).join(sep);
-      } else {
-        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
-      }
-    }).join(sep);
-
-  }
-
-  if (!name) return '';
-  return encodeURIComponent(stringifyPrimitive(name)) + eq +
-         encodeURIComponent(stringifyPrimitive(obj));
-};
-
-var isArray = Array.isArray || function (xs) {
-  return Object.prototype.toString.call(xs) === '[object Array]';
-};
-
-function map (xs, f) {
-  if (xs.map) return xs.map(f);
-  var res = [];
-  for (var i = 0; i < xs.length; i++) {
-    res.push(f(xs[i], i));
-  }
-  return res;
-}
-
-var objectKeys = Object.keys || function (obj) {
-  var res = [];
-  for (var key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
-  }
-  return res;
-};
-
-},{}],9:[function(require,module,exports){
-'use strict';
-
-exports.decode = exports.parse = require('./decode');
-exports.encode = exports.stringify = require('./encode');
-
-},{"./decode":7,"./encode":8}],10:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
@@ -3671,7 +3671,7 @@ request.put = function (url, data, fn) {
   return req;
 };
 
-},{"./agent-base":10,"./is-object":12,"./request-base":13,"./response-base":14,"component-emitter":4,"fast-safe-stringify":5}],12:[function(require,module,exports){
+},{"./agent-base":10,"./is-object":12,"./request-base":13,"./response-base":14,"component-emitter":8,"fast-safe-stringify":9}],12:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -5424,7 +5424,7 @@ var _default = ApiClient;
 exports["default"] = _default;
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"buffer":3,"fs":2,"querystring":9,"superagent":11}],17:[function(require,module,exports){
+},{"buffer":3,"fs":2,"querystring":7,"superagent":11}],17:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6116,6 +6116,10 @@ var _index = require("./index.js");
 
 var _promisify = require("./promisify.js");
 
+var _ApiClient = _interopRequireDefault(require("./ApiClient"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
 function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return generator._invoke = function (innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; }(innerFn, self, context), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; this._invoke = function (method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); }; } function maybeInvokeDelegate(delegate, context) { var method = delegate.iterator[context.method]; if (undefined === method) { if (context.delegate = null, "throw" === context.method) { if (delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method)) return ContinueSentinel; context.method = "throw", context.arg = new TypeError("The iterator does not provide a 'throw' method"); } return ContinueSentinel; } var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, define(Gp, "constructor", GeneratorFunctionPrototype), define(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (object) { var keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
@@ -6127,7 +6131,7 @@ var CreatePlayerRequest = _index.CreatePlayerRequest;
 var CreateGameRequest = _index.CreateGameRequest;
 var BetRequest = _index.BetRequest;
 var InsuranceRequest = _index.InsuranceRequest;
-var api = new DefaultApi();
+var api = new DefaultApi(new _ApiClient["default"](window.location.protocol + "//" + window.location.host));
 
 if (document.getElementById('highscore')) {
   _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
@@ -6168,6 +6172,349 @@ if (document.getElementById('highscore')) {
 }
 
 if (document.getElementById('editor')) {
+  var play = /*#__PURE__*/function () {
+    var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(stats) {
+      var cashDiv, infoDiv, statsDiv, wrapper, createPlayerRequest, playerName, playerResp, deckResp, playerInfoResp, maxMoney, createGameRequest, data, gameResp, betRequest, betResp, betId, resp, insuranceAnswer, insuranceRequest, secondHand, cmdStr, betResultResp, _cmdStr, _betResultResp;
+
+      return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+        while (1) {
+          switch (_context5.prev = _context5.next) {
+            case 0:
+              cashDiv = document.getElementById('cash');
+              infoDiv = document.getElementById('info');
+              statsDiv = document.getElementById('stats');
+              wrapper = new Function(editor.getValue() + "; return [bet,command,insurance,result];");
+              createPlayerRequest = new CreatePlayerRequest();
+              playerName = document.getElementById('playerName').value;
+
+              if (playerName) {
+                createPlayerRequest.name = playerName;
+              }
+
+              _context5.next = 9;
+              return (0, _promisify.promisify)(api.createPlayer.bind(api))(createPlayerRequest);
+
+            case 9:
+              playerResp = _context5.sent;
+              console.log(playerResp);
+              infoDiv.innerHTML = JSON.stringify(playerResp);
+              _context5.next = 14;
+              return (0, _promisify.promisify)(api.createDrawDeck.bind(api))();
+
+            case 14:
+              deckResp = _context5.sent;
+              console.log(deckResp);
+              infoDiv.innerHTML = JSON.stringify(deckResp);
+              _context5.next = 19;
+              return (0, _promisify.promisify)(api.getPlayer.bind(api))(playerResp.playerId);
+
+            case 19:
+              playerInfoResp = _context5.sent;
+              console.log(playerInfoResp);
+              infoDiv.innerHTML = JSON.stringify(playerInfoResp);
+              maxMoney = playerInfoResp.cash;
+
+            case 23:
+              if (!(!stop && playerInfoResp.cash > 0)) {
+                _context5.next = 172;
+                break;
+              }
+
+              createGameRequest = new CreateGameRequest();
+              createGameRequest.deckId = deckResp.deckId;
+              data = {
+                yourCards: [],
+                dealerCards: [],
+                yourTotal: null,
+                followActions: [],
+                result: "in progress"
+              };
+              _context5.next = 29;
+              return (0, _promisify.promisify)(api.createGame.bind(api))(createGameRequest);
+
+            case 29:
+              gameResp = _context5.sent;
+              console.log(gameResp);
+              infoDiv.innerHTML = JSON.stringify(gameResp);
+              betRequest = new BetRequest();
+              betRequest.bet = wrapper()[0](playerInfoResp.cash, stats);
+              betRequest.playerId = playerResp.playerId;
+              _context5.next = 37;
+              return (0, _promisify.promisify)(api.placeBet.bind(api))(gameResp.gameId, betRequest);
+
+            case 37:
+              betResp = _context5.sent;
+              console.log(betResp);
+              infoDiv.innerHTML = JSON.stringify(betResp);
+              data.yourCards.push(betResp.card1);
+              data.yourCards.push(betResp.card2);
+              data.dealerCards.push(betResp.dealersCard);
+              data.yourTotal = betResp.yourTotal;
+              data.followActions = betResp.followActions;
+              betId = betResp.betId;
+              resp = betResp;
+
+              if (!resp.followActions.includes("insurance")) {
+                _context5.next = 57;
+                break;
+              }
+
+              insuranceAnswer = wrapper()[2](data, stats);
+              insuranceRequest = new InsuranceRequest();
+              insuranceRequest.insurance = insuranceAnswer ? "yes" : "no";
+              _context5.next = 53;
+              return (0, _promisify.promisify)(api.insurance.bind(api))(gameResp.gameId, betId, insuranceRequest);
+
+            case 53:
+              resp = _context5.sent;
+              console.log(resp);
+              infoDiv.innerHTML = JSON.stringify(resp);
+              data.followActions = resp.followActions;
+
+            case 57:
+              secondHand = null;
+
+            case 58:
+              if (!(resp.followActions.length > 0)) {
+                _context5.next = 108;
+                break;
+              }
+
+              cmdStr = wrapper()[1](data, stats);
+
+              if (!(cmdStr == "hit")) {
+                _context5.next = 69;
+                break;
+              }
+
+              _context5.next = 63;
+              return (0, _promisify.promisify)(api.hit.bind(api))(gameResp.gameId, betId);
+
+            case 63:
+              resp = _context5.sent;
+              data.yourCards.push(resp.drawnCard);
+              data.yourTotal = resp.yourTotal;
+              data.followActions = resp.followActions;
+              _context5.next = 95;
+              break;
+
+            case 69:
+              if (!(cmdStr == "stand")) {
+                _context5.next = 76;
+                break;
+              }
+
+              _context5.next = 72;
+              return (0, _promisify.promisify)(api.stand.bind(api))(gameResp.gameId, betId);
+
+            case 72:
+              resp = _context5.sent;
+              data.followActions = resp.followActions;
+              _context5.next = 95;
+              break;
+
+            case 76:
+              if (!(cmdStr == "double")) {
+                _context5.next = 85;
+                break;
+              }
+
+              _context5.next = 79;
+              return (0, _promisify.promisify)(api.doubleBet.bind(api))(gameResp.gameId, betId);
+
+            case 79:
+              resp = _context5.sent;
+              data.yourCards.push(resp.drawnCard);
+              data.yourTotal = resp.yourTotal;
+              data.followActions = resp.followActions;
+              _context5.next = 95;
+              break;
+
+            case 85:
+              if (!(cmdStr == "split")) {
+                _context5.next = 95;
+                break;
+              }
+
+              _context5.next = 88;
+              return (0, _promisify.promisify)(api.split.bind(api))(gameResp.gameId, betId);
+
+            case 88:
+              resp = _context5.sent;
+              data.yourCards = [];
+              data.yourCards.push(resp.firstBetCard1);
+              data.yourCards.push(resp.firstBetCard2);
+              data.yourTotal = resp.firstBetTotal;
+              data.followActions = resp.followActions;
+              secondHand = {
+                data: {
+                  yourCards: [resp.secondBetCard1, resp.secondBetCard2],
+                  dealerCards: data.dealerCards,
+                  yourTotal: resp.secondBetTotal,
+                  followActions: resp.secondBetFollowAction
+                },
+                betId: resp.secondBetId
+              };
+
+            case 95:
+              console.log(resp);
+              infoDiv.innerHTML = JSON.stringify(resp);
+              _context5.next = 99;
+              return (0, _promisify.promisify)(api.getBet.bind(api))(gameResp.gameId, betId);
+
+            case 99:
+              betResultResp = _context5.sent;
+              console.log(betResultResp);
+              infoDiv.innerHTML = JSON.stringify(betResultResp);
+              data.dealerCards.push(betResultResp.dealersSecondCard);
+              data.dealerCards.concat(betResultResp.dealersAdditionalCard);
+              data.result = betResultResp.result;
+              wrapper()[3](data, stats);
+              _context5.next = 58;
+              break;
+
+            case 108:
+              if (!secondHand) {
+                _context5.next = 162;
+                break;
+              }
+
+              data = secondHand.data;
+              betId = secondHand.betId;
+              resp.followActions = secondHand.data.followActions;
+
+            case 112:
+              if (!(resp.followActions.length > 0)) {
+                _context5.next = 162;
+                break;
+              }
+
+              _cmdStr = wrapper()[1](data, stats);
+
+              if (!(_cmdStr == "hit")) {
+                _context5.next = 123;
+                break;
+              }
+
+              _context5.next = 117;
+              return (0, _promisify.promisify)(api.hit.bind(api))(gameResp.gameId, betId);
+
+            case 117:
+              resp = _context5.sent;
+              data.yourCards.push(resp.drawnCard);
+              data.yourTotal = resp.yourTotal;
+              data.followActions = resp.followActions;
+              _context5.next = 149;
+              break;
+
+            case 123:
+              if (!(_cmdStr == "stand")) {
+                _context5.next = 130;
+                break;
+              }
+
+              _context5.next = 126;
+              return (0, _promisify.promisify)(api.stand.bind(api))(gameResp.gameId, betId);
+
+            case 126:
+              resp = _context5.sent;
+              data.followActions = resp.followActions;
+              _context5.next = 149;
+              break;
+
+            case 130:
+              if (!(_cmdStr == "double")) {
+                _context5.next = 139;
+                break;
+              }
+
+              _context5.next = 133;
+              return (0, _promisify.promisify)(api.doubleBet.bind(api))(gameResp.gameId, betId);
+
+            case 133:
+              resp = _context5.sent;
+              data.yourCards.push(resp.drawnCard);
+              data.yourTotal = resp.yourTotal;
+              data.followActions = resp.followActions;
+              _context5.next = 149;
+              break;
+
+            case 139:
+              if (!(_cmdStr == "split")) {
+                _context5.next = 149;
+                break;
+              }
+
+              _context5.next = 142;
+              return (0, _promisify.promisify)(api.split.bind(api))(gameResp.gameId, betId);
+
+            case 142:
+              resp = _context5.sent;
+              data.yourCards = [];
+              data.yourCards.push(resp.firstBetCard1);
+              data.yourCards.push(resp.firstBetCard2);
+              data.yourTotal = resp.firstBetTotal;
+              data.followActions = resp.followActions;
+              secondHand = {
+                data: {
+                  yourCards: [resp.secondBetCard1, resp.secondBetCard2],
+                  yourTotal: resp.secondBetTotal,
+                  followActions: resp.secondBetFollowAction
+                },
+                betId: resp.secondBetId
+              };
+
+            case 149:
+              console.log(resp);
+              infoDiv.innerHTML = JSON.stringify(resp);
+              _context5.next = 153;
+              return (0, _promisify.promisify)(api.getBet.bind(api))(gameResp.gameId, betId);
+
+            case 153:
+              _betResultResp = _context5.sent;
+              console.log(_betResultResp);
+              infoDiv.innerHTML = JSON.stringify(_betResultResp);
+              data.dealerCards.push(_betResultResp.dealersSecondCard);
+              data.dealerCards.concat(_betResultResp.dealersAdditionalCard);
+              data.result = _betResultResp.result;
+              wrapper()[3](data, stats);
+              _context5.next = 112;
+              break;
+
+            case 162:
+              _context5.next = 164;
+              return (0, _promisify.promisify)(api.getPlayer.bind(api))(playerResp.playerId);
+
+            case 164:
+              playerInfoResp = _context5.sent;
+              console.log(playerInfoResp);
+              infoDiv.innerHTML = JSON.stringify(playerInfoResp);
+              statsDiv.innerHTML = JSON.stringify(stats);
+              cashDiv.innerHTML = playerInfoResp.cash;
+
+              if (maxMoney < playerInfoResp.cash) {
+                maxMoney = playerInfoResp.cash;
+              }
+
+              _context5.next = 23;
+              break;
+
+            case 172:
+              cashDiv.innerHTML = "" + maxMoney + " (peak)";
+
+            case 173:
+            case "end":
+              return _context5.stop();
+          }
+        }
+      }, _callee5);
+    }));
+
+    return function play(_x4) {
+      return _ref5.apply(this, arguments);
+    };
+  }();
+
   var stop = false;
   document.getElementById('stop').addEventListener('click', /*#__PURE__*/function () {
     var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(event) {
@@ -6176,8 +6523,11 @@ if (document.getElementById('editor')) {
           switch (_context2.prev = _context2.next) {
             case 0:
               stop = true;
+              document.getElementById('start').disabled = false;
+              document.getElementById('start100').disabled = false;
+              document.getElementById('stop').disabled = true;
 
-            case 1:
+            case 4:
             case "end":
               return _context2.stop();
           }
@@ -6191,183 +6541,24 @@ if (document.getElementById('editor')) {
   }());
   document.getElementById('start').addEventListener('click', /*#__PURE__*/function () {
     var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(event) {
-      var cashDiv, infoDiv, wrapper, createPlayerRequest, playerName, playerResp, deckResp, playerInfoResp, maxMoney, createGameRequest, gameResp, betRequest, betResp, resp, insuranceAnswer, insuranceRequest, cmdStr, betResultResp;
       return _regeneratorRuntime().wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
-              cashDiv = document.getElementById('cash');
-              infoDiv = document.getElementById('info');
-              wrapper = new Function(editor.getValue() + "; return [bet,command,insurance];");
-              createPlayerRequest = new CreatePlayerRequest();
-              playerName = document.getElementById('playerName').value;
-
-              if (playerName) {
-                createPlayerRequest.name = playerName;
-              }
-
-              _context3.next = 8;
-              return (0, _promisify.promisify)(api.createPlayer.bind(api))(createPlayerRequest);
-
-            case 8:
-              playerResp = _context3.sent;
-              console.log(playerResp);
-              infoDiv.innerHTML = JSON.stringify(playerResp);
-              _context3.next = 13;
-              return (0, _promisify.promisify)(api.createDrawDeck.bind(api))();
-
-            case 13:
-              deckResp = _context3.sent;
-              console.log(deckResp);
-              infoDiv.innerHTML = JSON.stringify(deckResp);
-              _context3.next = 18;
-              return (0, _promisify.promisify)(api.getPlayer.bind(api))(playerResp.playerId);
-
-            case 18:
-              playerInfoResp = _context3.sent;
-              console.log(playerInfoResp);
-              infoDiv.innerHTML = JSON.stringify(playerInfoResp);
-              maxMoney = playerInfoResp.cash;
+              document.getElementById('start').disabled = true;
+              document.getElementById('start100').disabled = true;
+              document.getElementById('stop').disabled = false;
               stop = false;
+              document.getElementById('round').innerHTML = "(single)";
+              _context3.next = 7;
+              return play({});
 
-            case 23:
-              if (!(!stop && playerInfoResp.cash > 0)) {
-                _context3.next = 91;
-                break;
-              }
+            case 7:
+              document.getElementById('start').disabled = false;
+              document.getElementById('start100').disabled = false;
+              document.getElementById('stop').disabled = true;
 
-              createGameRequest = new CreateGameRequest();
-              createGameRequest.deckId = deckResp.deckId;
-              _context3.next = 28;
-              return (0, _promisify.promisify)(api.createGame.bind(api))(createGameRequest);
-
-            case 28:
-              gameResp = _context3.sent;
-              console.log(gameResp);
-              infoDiv.innerHTML = JSON.stringify(gameResp);
-              betRequest = new BetRequest();
-              betRequest.bet = wrapper()[0](playerInfoResp.cash);
-              betRequest.playerId = playerResp.playerId;
-              _context3.next = 36;
-              return (0, _promisify.promisify)(api.placeBet.bind(api))(gameResp.gameId, betRequest);
-
-            case 36:
-              betResp = _context3.sent;
-              console.log(betResp);
-              infoDiv.innerHTML = JSON.stringify(betResp);
-              resp = betResp;
-
-              if (!resp.followActions.includes("insurance")) {
-                _context3.next = 49;
-                break;
-              }
-
-              insuranceAnswer = wrapper()[2](resp);
-              insuranceRequest = new InsuranceRequest();
-              insuranceRequest.insurance = insuranceAnswer ? "yes" : "no";
-              _context3.next = 46;
-              return (0, _promisify.promisify)(api.insurance.bind(api))(gameResp.gameId, betResp.betId, insuranceRequest);
-
-            case 46:
-              resp = _context3.sent;
-              console.log(resp);
-              infoDiv.innerHTML = JSON.stringify(resp);
-
-            case 49:
-              if (!(resp.followActions.length > 0)) {
-                _context3.next = 77;
-                break;
-              }
-
-              cmdStr = wrapper()[1](resp);
-
-              if (!(cmdStr == "HIT")) {
-                _context3.next = 57;
-                break;
-              }
-
-              _context3.next = 54;
-              return (0, _promisify.promisify)(api.hit.bind(api))(gameResp.gameId, betResp.betId);
-
-            case 54:
-              resp = _context3.sent;
-              _context3.next = 73;
-              break;
-
-            case 57:
-              if (!(cmdStr == "STAND")) {
-                _context3.next = 63;
-                break;
-              }
-
-              _context3.next = 60;
-              return (0, _promisify.promisify)(api.stand.bind(api))(gameResp.gameId, betResp.betId);
-
-            case 60:
-              resp = _context3.sent;
-              _context3.next = 73;
-              break;
-
-            case 63:
-              if (!(cmdStr == "DOUBLE")) {
-                _context3.next = 69;
-                break;
-              }
-
-              _context3.next = 66;
-              return (0, _promisify.promisify)(api["double"].bind(api))(gameResp.gameId, betResp.betId);
-
-            case 66:
-              resp = _context3.sent;
-              _context3.next = 73;
-              break;
-
-            case 69:
-              if (!(cmdStr == "SPLIT")) {
-                _context3.next = 73;
-                break;
-              }
-
-              _context3.next = 72;
-              return (0, _promisify.promisify)(api.split.bind(api))(gameResp.gameId, betResp.betId);
-
-            case 72:
-              resp = _context3.sent;
-
-            case 73:
-              console.log(resp);
-              infoDiv.innerHTML = JSON.stringify(resp);
-              _context3.next = 49;
-              break;
-
-            case 77:
-              _context3.next = 79;
-              return (0, _promisify.promisify)(api.getBet.bind(api))(gameResp.gameId, betResp.betId);
-
-            case 79:
-              betResultResp = _context3.sent;
-              console.log(betResultResp);
-              infoDiv.innerHTML = JSON.stringify(betResultResp);
-              _context3.next = 84;
-              return (0, _promisify.promisify)(api.getPlayer.bind(api))(playerResp.playerId);
-
-            case 84:
-              playerInfoResp = _context3.sent;
-              console.log(playerInfoResp);
-              infoDiv.innerHTML = JSON.stringify(playerInfoResp);
-              cashDiv.innerHTML = playerInfoResp.cash;
-
-              if (maxMoney < playerInfoResp.cash) {
-                maxMoney = playerInfoResp.cash;
-              }
-
-              _context3.next = 23;
-              break;
-
-            case 91:
-              cashDiv.innerHTML = "" + maxMoney + " (max)";
-
-            case 92:
+            case 10:
             case "end":
               return _context3.stop();
           }
@@ -6379,9 +6570,55 @@ if (document.getElementById('editor')) {
       return _ref3.apply(this, arguments);
     };
   }());
+  document.getElementById('start100').addEventListener('click', /*#__PURE__*/function () {
+    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(event) {
+      var stats, i;
+      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
+        while (1) {
+          switch (_context4.prev = _context4.next) {
+            case 0:
+              document.getElementById('start').disabled = true;
+              document.getElementById('start100').disabled = true;
+              document.getElementById('stop').disabled = false;
+              stop = false;
+              stats = {};
+              i = 0;
+
+            case 6:
+              if (!(i < 100 && !stop)) {
+                _context4.next = 13;
+                break;
+              }
+
+              document.getElementById('round').innerHTML = i;
+              _context4.next = 10;
+              return play(stats);
+
+            case 10:
+              i++;
+              _context4.next = 6;
+              break;
+
+            case 13:
+              document.getElementById('start').disabled = false;
+              document.getElementById('start100').disabled = false;
+              document.getElementById('stop').disabled = true;
+
+            case 16:
+            case "end":
+              return _context4.stop();
+          }
+        }
+      }, _callee4);
+    }));
+
+    return function (_x3) {
+      return _ref4.apply(this, arguments);
+    };
+  }());
 }
 
-},{"./index.js":18,"./promisify.js":35}],20:[function(require,module,exports){
+},{"./ApiClient":16,"./index.js":18,"./promisify.js":35}],20:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
