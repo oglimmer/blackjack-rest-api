@@ -76,7 +76,11 @@ if(document.getElementById('editor')) {
         const infoDiv = document.getElementById('info');
         const statsDiv = document.getElementById('stats');
 
-        const wrapper = new Function(editor.getValue()+ "; return [bet,command,insurance,result];");
+        const wrapper = new Function(editor.getValue()+ "; return [bet,command,insurance,result,begin,end];");
+
+        if (wrapper()[4]) {
+            wrapper()[4](stats);
+        }
 
         const createPlayerRequest = new CreatePlayerRequest();
         const playerName = document.getElementById('playerName').value;
@@ -249,5 +253,9 @@ if(document.getElementById('editor')) {
             }
         }
         cashDiv.innerHTML = "" + maxMoney + " (peak)";
+        if (wrapper()[5]) {
+            wrapper()[5](maxMoney, stats);
+        }
+        statsDiv.innerHTML = JSON.stringify(stats);
     }
 }

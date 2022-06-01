@@ -55,7 +55,7 @@ This is how you build blackjack itself:
 ```bash
 # get the Ace editor
 git clone https://github.com/ajaxorg/ace-builds/ /tmp/ace
-cp -r /tmp/ace/src-min static/ace
+cp -r /tmp/ace/src-min client-res/static/ace
 rm -rf /tmp/ace
 # build UI
 cd client-res
