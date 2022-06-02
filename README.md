@@ -60,7 +60,7 @@ rm -rf /tmp/ace
 
 # build UI (UI only)
 cd client-res
-npm i browserify babelify
+npm i
 npm run static
 cd ..
 
