@@ -37,6 +37,7 @@ if (document.getElementById('highscore')) {
 function buttons(disabled) {
     document.getElementById('start').disabled = disabled;
     document.getElementById('start100').disabled = disabled;
+    document.getElementById('startForever').disabled = disabled;
     document.getElementById('stop').disabled = !disabled;
 }
 
@@ -64,6 +65,17 @@ if (document.getElementById('editor')) {
             await play(stats);
         }
         buttons(false);
+    });
+
+    document.getElementById('startForever').addEventListener('click', async (event) => {
+        buttons(true);
+        stop = false;
+        const stats = {};
+        let i = 0;
+        while(!stop) {
+            document.getElementById('round').innerHTML = i++;
+            await play(stats);
+        }
     });
 
     const INDEX_BET = 0;
