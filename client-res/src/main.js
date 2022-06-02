@@ -76,7 +76,7 @@ if(document.getElementById('editor')) {
         const infoDiv = document.getElementById('info');
         const statsDiv = document.getElementById('stats');
 
-        const wrapper = new Function(editor.getValue()+ "; return [bet,command,insurance,result,begin,end];");
+        const wrapper = new Function(editor.getValue()+ "; if (typeof begin === \"undefined\") { var begin; }; if (typeof end === \"undefined\") { var end; }; return [bet,command,insurance,result,begin,end];");
 
         if (wrapper()[4]) {
             wrapper()[4](stats);
