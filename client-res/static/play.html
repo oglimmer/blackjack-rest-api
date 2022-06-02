@@ -80,6 +80,14 @@ function result(data, stats) {
 /* the object behind the stats parameter is always the same object, so you can collect
    statistics during the entire runtime of Start or Start100x. The content of stats is
    written to the stats div. */
+
+function begin(stats) {
+    // called before a player and deck is created
+}
+function end(maxMoney, stats) {
+    // called after a player went bankrupt
+    // maxMoney is the highest amount of money this player had during its lifetime
+}
 </div>
 
 <script src="./ace/ace.js" type="text/javascript" charset="utf-8"></script>
