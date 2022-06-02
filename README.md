@@ -46,33 +46,49 @@ cd build
 make install
 ```
 
-For the UI you also need to have node and npm installed.
+For the UI you also need to have node, npm installed.
 
 ## Blackjack
 
 This is how you build blackjack itself:
 
 ```bash
-# get the Ace editor
+# get the Ace editor (UI only)
 git clone https://github.com/ajaxorg/ace-builds/ /tmp/ace
 cp -r /tmp/ace/src-min client-res/static/ace
 rm -rf /tmp/ace
-# build UI
+
+# build UI (UI only)
 cd client-res
-npm i
-browserify src/main.js -o static/bundle.js -t [ babelify ]
+npm i browserify babelify
+npm run static
 cd ..
-# build C++
+
+# build C++ (REST backend)
 mkdir build && cd build
 cmake ..
 make
 ```
+
+# Re-generate JavaScript REST client
+
+You need to have java-jre installed.
+
+```
+# generate REST client via openapi-generator (UI only)
+curl https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -o /tmp/openapi-generator-cli.jar
+cd client-res
+java -jar /tmp/openapi-generator-cli.jar generate -i https://bj.oglimmer.de/api-docs/oas-3.0.0.json -g javascript -o .
+cd ..
+```
+
 
 # Run & Test
 
 To run the server:
 
 ```bash
+export STATIC_ROOT=./client-res/static/
 build/blackjack-exe
 ```
 
@@ -116,3 +132,4 @@ curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{"ins
 curl https://bj.oglimmer.de/v2/game/${GAME_ID}/bet/${BET_ID}
 
 Use: https://raw.githubusercontent.com/oglimmer/blackjack-rest-api/master/play.sh to play via bash! (needs curl and jq installed)
+

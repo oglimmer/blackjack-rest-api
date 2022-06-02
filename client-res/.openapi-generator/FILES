@@ -1,6 +1,5 @@
 .babelrc
 .gitignore
-.openapi-generator-ignore
 .travis.yml
 README.md
 docs/BetGetResponse.md
@@ -40,19 +39,3 @@ src/model/HitResponse.js
 src/model/InsuranceRequest.js
 src/model/SplitResponse.js
 src/model/StandResponse.js
-test/api/DefaultApi.spec.js
-test/model/BetGetResponse.spec.js
-test/model/BetRequest.spec.js
-test/model/BetResponse.spec.js
-test/model/CreateDeckResponse.spec.js
-test/model/CreateGameRequest.spec.js
-test/model/CreateGameResponse.spec.js
-test/model/CreatePlayerRequest.spec.js
-test/model/CreatePlayerResponse.spec.js
-test/model/GetPlayerResponse.spec.js
-test/model/HighscoreElementResponse.spec.js
-test/model/HighscoreResponse.spec.js
-test/model/HitResponse.spec.js
-test/model/InsuranceRequest.spec.js
-test/model/SplitResponse.spec.js
-test/model/StandResponse.spec.js
