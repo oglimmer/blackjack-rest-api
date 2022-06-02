@@ -75,46 +75,49 @@ if (document.getElementById('editor')) {
 
     async function processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, hand2nd) {
         let secondHand = null;
-        while (resp.followActions.length > 0) {
-            const cmdStr = wrapper()[INDEX_COMMAND](data, stats, hand2nd);
-            if (cmdStr == "hit") {
-                resp = await promisify(api.hit.bind(api))(gameResp.gameId, betId);
-                data.yourCards.push(resp.drawnCard);
-                data.yourTotal = resp.yourTotal;
-                data.followActions = resp.followActions;
-            } else if (cmdStr == "stand") {
-                resp = await promisify(api.stand.bind(api))(gameResp.gameId, betId);
-                data.followActions = resp.followActions;
-            } else if (cmdStr == "double") {
-                resp = await promisify(api.doubleBet.bind(api))(gameResp.gameId, betId);
-                data.yourCards.push(resp.drawnCard);
-                data.yourTotal = resp.yourTotal;
-                data.followActions = resp.followActions;
-            } else if (cmdStr == "split") {
-                if (hand2nd) throw "hand2nd";
-                resp = await promisify(api.split.bind(api))(gameResp.gameId, betId);
-                data.yourCards = [];
-                data.yourCards.push(resp.firstBetCard1);
-                data.yourCards.push(resp.firstBetCard2);
-                data.yourTotal = resp.firstBetTotal;
-                data.followActions = resp.followActions;
-                secondHand = {
-                    data: {
-                        yourCards: [
-                            resp.secondBetCard1,
-                            resp.secondBetCard2
-                        ],
-                        dealerCards: data.dealerCards,
-                        yourTotal: resp.secondBetTotal,
-                        followActions: resp.secondBetFollowAction
-                    },
-                    betId: resp.secondBetId
+        try {
+            while (resp.followActions.length > 0) {
+                const cmdStr = wrapper()[INDEX_COMMAND](data, stats, hand2nd);
+                if (cmdStr == "hit") {
+                    resp = await promisify(api.hit.bind(api))(gameResp.gameId, betId);
+                    data.yourCards.push(resp.drawnCard);
+                    data.yourTotal = resp.yourTotal;
+                    data.followActions = resp.followActions;
+                } else if (cmdStr == "stand") {
+                    resp = await promisify(api.stand.bind(api))(gameResp.gameId, betId);
+                    data.followActions = resp.followActions;
+                } else if (cmdStr == "double") {
+                    resp = await promisify(api.doubleBet.bind(api))(gameResp.gameId, betId);
+                    data.yourCards.push(resp.drawnCard);
+                    data.yourTotal = resp.yourTotal;
+                    data.followActions = resp.followActions;
+                } else if (cmdStr == "split") {
+                    if (hand2nd) throw "hand2nd";
+                    resp = await promisify(api.split.bind(api))(gameResp.gameId, betId);
+                    data.yourCards = [];
+                    data.yourCards.push(resp.firstBetCard1);
+                    data.yourCards.push(resp.firstBetCard2);
+                    data.yourTotal = resp.firstBetTotal;
+                    data.followActions = resp.followActions;
+                    secondHand = {
+                        data: {
+                            yourCards: [
+                                resp.secondBetCard1,
+                                resp.secondBetCard2
+                            ],
+                            dealerCards: data.dealerCards,
+                            yourTotal: resp.secondBetTotal,
+                            followActions: resp.secondBetFollowAction
+                        },
+                        betId: resp.secondBetId
+                    }
                 }
+                console.log(resp);
+                infoDiv.innerHTML = JSON.stringify(resp);
             }
-            console.log(resp);
-            infoDiv.innerHTML = JSON.stringify(resp);
+        } catch (e) {
+            console.error(e);
         }
-
         const betResultResp = await promisify(api.getBet.bind(api))(gameResp.gameId, betId);
         console.log(betResultResp);
         infoDiv.innerHTML = JSON.stringify(betResultResp);
