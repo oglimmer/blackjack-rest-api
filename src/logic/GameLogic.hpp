@@ -120,7 +120,7 @@ private:
 
     std::unique_ptr<std::vector<std::string>> AddFollowActions(std::shared_ptr<Bet> bet) const;
 
-    void WrapUp();
+    void WrapUp(std::shared_ptr<Bet> bet, std::shared_ptr<Bet> bet2nd = 0);
 
     void AdvanceDealer();
 

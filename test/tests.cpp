@@ -7,9 +7,9 @@
 #include <iostream>
 
 void runTests() {
-//    OATPP_RUN_TEST(BlackJackUnitTest);
-//    OATPP_RUN_TEST(GameControllerSimpleWinTest);
-//    OATPP_RUN_TEST(GameControllerDealerBlackJackTest);
+    OATPP_RUN_TEST(BlackJackUnitTest);
+    OATPP_RUN_TEST(GameControllerSimpleWinTest);
+    OATPP_RUN_TEST(GameControllerDealerBlackJackTest);
     OATPP_RUN_TEST(GameControllerInsuranceTest);
 }
 

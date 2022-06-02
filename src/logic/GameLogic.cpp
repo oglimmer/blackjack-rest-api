@@ -97,11 +97,7 @@ void Game::Hit(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse) {
     hitResponse->drawnCard = card->GetDesc();
     hitResponse->yourTotal = bet->GetDrawnCards()->GetValue();
 
-    if (bet->GetDrawnCards()->GetValue() > 21) {
-        bet->SetStand(true);
-    }
-
-    WrapUp();
+    WrapUp(bet);
 
     auto actions = AddFollowActions(bet);
     hitResponse->followActions = {};
@@ -132,7 +128,7 @@ void Game::DoubleBet(std::shared_ptr<Bet> bet, HitResponse::Wrapper &hitResponse
 
     bet->SetStand(true);
 
-    WrapUp();
+    WrapUp(bet);
 
     auto actions = AddFollowActions(bet);
     hitResponse->followActions = {};
@@ -148,7 +144,7 @@ void Game::Stand(std::shared_ptr<Bet> bet, StandResponse::Wrapper &standResponse
         throw GameException("Action `stand` not allowed.");
     }
     bet->SetStand(true);
-    WrapUp();
+    WrapUp(bet);
     standResponse->followActions = {};
 }
 
@@ -179,7 +175,11 @@ void Game::PlaceBet(int betVal, std::shared_ptr<Player> player, BetResponse::Wra
     betResponse->yourTotal = bet->GetDrawnCards()->GetValue();
     betResponse->betId = bet->GetBetId();
 
-    WrapUp();
+    if (bet->GetDrawnCards()->IsBlackJack()) {
+        bet->SetStand(true);
+    }
+
+    WrapUp(bet);
 
     auto actions = AddFollowActions(bet);
     betResponse->followActions = {};
@@ -224,7 +224,7 @@ void Game::Split(std::shared_ptr<Bet> bet, SplitResponse::Wrapper &splitResponse
     splitResponse->secondBetCard2 = bet2nd->GetDrawnCards()->GetCard(1)->GetDesc();
     splitResponse->secondBetTotal = bet2nd->GetDrawnCards()->GetValue();
 
-    WrapUp();
+    WrapUp(bet, bet2nd);
 
     auto actions = AddFollowActions(bet);
     splitResponse->followActions = {};
@@ -255,7 +255,7 @@ void Game::Insurance(bool insurance, std::shared_ptr<Bet> bet, StandResponse::Wr
         bet->GetPlayer()->SubCash(bet->GetBet() * 0.5);
     }
 
-    WrapUp();
+    WrapUp(bet);
 
     auto actions = AddFollowActions(bet);
     standResponse->followActions = {};
@@ -286,8 +286,10 @@ bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &respon
         } else {
             response->result = "You lost!!";
         }
+    } else if (bet->IsDone()) {
+        response->result = "Other bets still in progress";
     } else {
-        response->result = "In progress";
+        response->result = "This bet is still in progress";
     }
     response->dealersAdditionalCard = {};
     if (isDone) {
@@ -360,7 +362,7 @@ std::unique_ptr<std::vector<std::string>> Game::AddFollowActions(std::shared_ptr
 }
 
 
-void Game::WrapUp() {
+void Game::WrapUp(std::shared_ptr<Bet> bet, std::shared_ptr<Bet> bet2nd) {
     if (drawnCardsDealer->IsBlackJack()) {
         if (dealerCardOpen->GetRank() == 11 && bets[0]->IsAskedForInsurance()) {
             bets[0]->SetStand(true);
@@ -368,6 +370,12 @@ void Game::WrapUp() {
         if (dealerCardClosed->GetRank() == 11) {
             bets[0]->SetStand(true);
         }
+    }
+    if (bet->GetDrawnCards()->GetValue() >= 21) {
+        bet->SetStand(true);
+    }
+    if (bet2nd && bet2nd->GetDrawnCards()->GetValue() >= 21) {
+        bet2nd->SetStand(true);
     }
     if (IsDone()) {
         AdvanceDealer();
