@@ -1,4 +1,3 @@
-
 import {
     DefaultApi as _DefaultApi,
     CreatePlayerRequest as _CreatePlayerRequest,
@@ -19,11 +18,11 @@ const InsuranceRequest = _InsuranceRequest;
 
 const api = new DefaultApi(new ApiClient(window.location.protocol + "//" + window.location.host));
 
-if(document.getElementById('highscore')) {
+if (document.getElementById('highscore')) {
     (async () => {
         try {
             const highscore = await promisify(api.highscore.bind(api))();
-            for(let i = 0; i < highscore.highscores.length; i++) {
+            for (let i = 0; i < highscore.highscores.length; i++) {
                 const s = highscore.highscores[i];
                 document.getElementById('cell' + i + '_0').innerHTML = s.pos;
                 document.getElementById('cell' + i + '_1').innerHTML = s.name;
@@ -35,51 +34,117 @@ if(document.getElementById('highscore')) {
     })();
 }
 
-if(document.getElementById('editor')) {
-    let stop=false;
+function buttons(disabled) {
+    document.getElementById('start').disabled = disabled;
+    document.getElementById('start100').disabled = disabled;
+    document.getElementById('stop').disabled = !disabled;
+}
+
+if (document.getElementById('editor')) {
+    let stop = false;
     document.getElementById('stop').addEventListener('click', async (event) => {
-        stop=true;
-        document.getElementById('start').disabled = false;
-        document.getElementById('start100').disabled = false;
-        document.getElementById('stop').disabled = true;
+        stop = true;
+        buttons(false);
     });
 
     document.getElementById('start').addEventListener('click', async (event) => {
-        document.getElementById('start').disabled = true;
-        document.getElementById('start100').disabled = true;
-        document.getElementById('stop').disabled = false;
-        stop=false;
+        buttons(true);
+        stop = false;
         document.getElementById('round').innerHTML = "(single)";
         await play({});
-        document.getElementById('start').disabled = false;
-        document.getElementById('start100').disabled = false;
-        document.getElementById('stop').disabled = true;
+        buttons(false);
     });
 
     document.getElementById('start100').addEventListener('click', async (event) => {
-        document.getElementById('start').disabled = true;
-        document.getElementById('start100').disabled = true;
-        document.getElementById('stop').disabled = false;
-        stop=false;
+        buttons(true);
+        stop = false;
         const stats = {};
         for (let i = 0; i < 100 && !stop; i++) {
             document.getElementById('round').innerHTML = i;
             await play(stats);
         }
-        document.getElementById('start').disabled = false;
-        document.getElementById('start100').disabled = false;
-        document.getElementById('stop').disabled = true;
+        buttons(false);
     });
+
+    const INDEX_BET = 0;
+    const INDEX_COMMAND = 1;
+    const INDEX_INSURANCE = 2;
+    const INDEX_RESULT = 3;
+    const INDEX_BEGIN = 4;
+    const INDEX_END = 5;
+
+    async function processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, hand2nd) {
+        let secondHand = null;
+        while (resp.followActions.length > 0) {
+            const cmdStr = wrapper()[INDEX_COMMAND](data, stats, hand2nd);
+            if (cmdStr == "hit") {
+                resp = await promisify(api.hit.bind(api))(gameResp.gameId, betId);
+                data.yourCards.push(resp.drawnCard);
+                data.yourTotal = resp.yourTotal;
+                data.followActions = resp.followActions;
+            } else if (cmdStr == "stand") {
+                resp = await promisify(api.stand.bind(api))(gameResp.gameId, betId);
+                data.followActions = resp.followActions;
+            } else if (cmdStr == "double") {
+                resp = await promisify(api.doubleBet.bind(api))(gameResp.gameId, betId);
+                data.yourCards.push(resp.drawnCard);
+                data.yourTotal = resp.yourTotal;
+                data.followActions = resp.followActions;
+            } else if (cmdStr == "split") {
+                if (hand2nd) throw "hand2nd";
+                resp = await promisify(api.split.bind(api))(gameResp.gameId, betId);
+                data.yourCards = [];
+                data.yourCards.push(resp.firstBetCard1);
+                data.yourCards.push(resp.firstBetCard2);
+                data.yourTotal = resp.firstBetTotal;
+                data.followActions = resp.followActions;
+                secondHand = {
+                    data: {
+                        yourCards: [
+                            resp.secondBetCard1,
+                            resp.secondBetCard2
+                        ],
+                        dealerCards: data.dealerCards,
+                        yourTotal: resp.secondBetTotal,
+                        followActions: resp.secondBetFollowAction
+                    },
+                    betId: resp.secondBetId
+                }
+            }
+            console.log(resp);
+            infoDiv.innerHTML = JSON.stringify(resp);
+        }
+
+        const betResultResp = await promisify(api.getBet.bind(api))(gameResp.gameId, betId);
+        console.log(betResultResp);
+        infoDiv.innerHTML = JSON.stringify(betResultResp);
+        if (betResultResp.dealersSecondCard) {
+            data.dealerCards.push(betResultResp.dealersSecondCard);
+        }
+        if (betResultResp.dealersAdditionalCard.length > 0) {
+            data.dealerCards.concat(betResultResp.dealersAdditionalCard);
+        }
+        data.result = betResultResp.result;
+        wrapper()[INDEX_RESULT](data, stats);
+
+        return {
+            secondHand,
+            resp
+        }
+    }
 
     async function play(stats) {
         const cashDiv = document.getElementById('cash');
         const infoDiv = document.getElementById('info');
         const statsDiv = document.getElementById('stats');
 
-        const wrapper = new Function(editor.getValue()+ "; if (typeof begin === \"undefined\") { var begin; }; if (typeof end === \"undefined\") { var end; }; return [bet,command,insurance,result,begin,end];");
+        const wrapper = new Function(editor.getValue() + "; " +
+            "if (typeof begin === \"undefined\") { var begin; }; " +
+            "if (typeof end === \"undefined\") { var end; }; " +
+            "return [bet,command,insurance,result,begin,end];");
 
-        if (wrapper()[4]) {
-            wrapper()[4](stats);
+        if (wrapper()[INDEX_BEGIN]) {
+            wrapper()[INDEX_BEGIN](stats);
         }
 
         const createPlayerRequest = new CreatePlayerRequest();
@@ -101,7 +166,7 @@ if(document.getElementById('editor')) {
         infoDiv.innerHTML = JSON.stringify(playerInfoResp);
 
         let maxMoney = playerInfoResp.cash;
-        while(!stop && playerInfoResp.cash > 0) {
+        while (!stop && playerInfoResp.cash > 0) {
             const createGameRequest = new CreateGameRequest();
             createGameRequest.deckId = deckResp.deckId;
             let data = {
@@ -117,7 +182,7 @@ if(document.getElementById('editor')) {
             infoDiv.innerHTML = JSON.stringify(gameResp);
 
             const betRequest = new BetRequest();
-            betRequest.bet = wrapper()[0](playerInfoResp.cash, stats);
+            betRequest.bet = wrapper()[INDEX_BET](playerInfoResp.cash, stats);
             betRequest.playerId = playerResp.playerId;
 
             const betResp = await promisify(api.placeBet.bind(api))(gameResp.gameId, betRequest);
@@ -132,7 +197,7 @@ if(document.getElementById('editor')) {
             let resp = betResp;
 
             if (resp.followActions.includes("insurance")) {
-                const insuranceAnswer = wrapper()[2](data, stats);
+                const insuranceAnswer = wrapper()[INDEX_INSURANCE](data, stats);
                 const insuranceRequest = new InsuranceRequest();
                 insuranceRequest.insurance = insuranceAnswer ? "yes" : "no";
                 resp = await promisify(api.insurance.bind(api))(gameResp.gameId, betId, insuranceRequest);
@@ -142,105 +207,13 @@ if(document.getElementById('editor')) {
             }
 
             let secondHand = null;
+            ({secondHand, resp} = await processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, false));
 
-            while (resp.followActions.length > 0) {
-                const cmdStr = wrapper()[1](data, stats);
-                if (cmdStr == "hit") {
-                    resp = await promisify(api.hit.bind(api))(gameResp.gameId, betId);
-                    data.yourCards.push(resp.drawnCard);
-                    data.yourTotal = resp.yourTotal;
-                    data.followActions = resp.followActions;
-                } else if (cmdStr == "stand") {
-                    resp = await promisify(api.stand.bind(api))(gameResp.gameId, betId);
-                    data.followActions = resp.followActions;
-                } else if (cmdStr == "double") {
-                    resp = await promisify(api.doubleBet.bind(api))(gameResp.gameId, betId);
-                    data.yourCards.push(resp.drawnCard);
-                    data.yourTotal = resp.yourTotal;
-                    data.followActions = resp.followActions;
-                } else if (cmdStr == "split") {
-                    resp = await promisify(api.split.bind(api))(gameResp.gameId, betId);
-                    data.yourCards = [];
-                    data.yourCards.push(resp.firstBetCard1);
-                    data.yourCards.push(resp.firstBetCard2);
-                    data.yourTotal = resp.firstBetTotal;
-                    data.followActions = resp.followActions;
-                    secondHand = {
-                        data: {
-                            yourCards: [
-                                resp.secondBetCard1,
-                                resp.secondBetCard2
-                            ],
-                            dealerCards: data.dealerCards,
-                            yourTotal: resp.secondBetTotal,
-                            followActions: resp.secondBetFollowAction
-                        },
-                        betId: resp.secondBetId
-                    }
-                }
-                console.log(resp);
-                infoDiv.innerHTML = JSON.stringify(resp);
-
-
-                const betResultResp = await promisify(api.getBet.bind(api))(gameResp.gameId, betId);
-                console.log(betResultResp);
-                infoDiv.innerHTML = JSON.stringify(betResultResp);
-                data.dealerCards.push(betResultResp.dealersSecondCard);
-                data.dealerCards.concat(betResultResp.dealersAdditionalCard);
-                data.result = betResultResp.result;
-                wrapper()[3](data, stats);
-            }
-
-            if(secondHand) {
+            if (secondHand) {
                 data = secondHand.data;
                 betId = secondHand.betId;
                 resp.followActions = secondHand.data.followActions;
-                while (resp.followActions.length > 0) {
-                    const cmdStr = wrapper()[1](data, stats);
-                    if (cmdStr == "hit") {
-                        resp = await promisify(api.hit.bind(api))(gameResp.gameId, betId);
-                        data.yourCards.push(resp.drawnCard);
-                        data.yourTotal = resp.yourTotal;
-                        data.followActions = resp.followActions;
-                    } else if (cmdStr == "stand") {
-                        resp = await promisify(api.stand.bind(api))(gameResp.gameId, betId);
-                        data.followActions = resp.followActions;
-                    } else if (cmdStr == "double") {
-                        resp = await promisify(api.doubleBet.bind(api))(gameResp.gameId, betId);
-                        data.yourCards.push(resp.drawnCard);
-                        data.yourTotal = resp.yourTotal;
-                        data.followActions = resp.followActions;
-                    } else if (cmdStr == "split") {
-                        resp = await promisify(api.split.bind(api))(gameResp.gameId, betId);
-                        data.yourCards = [];
-                        data.yourCards.push(resp.firstBetCard1);
-                        data.yourCards.push(resp.firstBetCard2);
-                        data.yourTotal = resp.firstBetTotal;
-                        data.followActions = resp.followActions;
-                        secondHand = {
-                            data: {
-                                yourCards: [
-                                    resp.secondBetCard1,
-                                    resp.secondBetCard2
-                                ],
-                                yourTotal: resp.secondBetTotal,
-                                followActions: resp.secondBetFollowAction
-                            },
-                            betId: resp.secondBetId
-                        }
-                    }
-                    console.log(resp);
-                    infoDiv.innerHTML = JSON.stringify(resp);
-
-
-                    const betResultResp = await promisify(api.getBet.bind(api))(gameResp.gameId, betId);
-                    console.log(betResultResp);
-                    infoDiv.innerHTML = JSON.stringify(betResultResp);
-                    data.dealerCards.push(betResultResp.dealersSecondCard);
-                    data.dealerCards.concat(betResultResp.dealersAdditionalCard);
-                    data.result = betResultResp.result;
-                    wrapper()[3](data, stats);
-                }
+                ({resp} = await processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, true));
             }
 
             playerInfoResp = await promisify(api.getPlayer.bind(api))(playerResp.playerId);
@@ -248,13 +221,13 @@ if(document.getElementById('editor')) {
             infoDiv.innerHTML = JSON.stringify(playerInfoResp);
             statsDiv.innerHTML = JSON.stringify(stats);
             cashDiv.innerHTML = playerInfoResp.cash;
-            if(maxMoney < playerInfoResp.cash) {
+            if (maxMoney < playerInfoResp.cash) {
                 maxMoney = playerInfoResp.cash;
             }
         }
         cashDiv.innerHTML = "" + maxMoney + " (peak)";
-        if (wrapper()[5]) {
-            wrapper()[5](maxMoney, stats);
+        if (wrapper()[INDEX_END]) {
+            wrapper()[INDEX_END](maxMoney, stats);
         }
         statsDiv.innerHTML = JSON.stringify(stats);
     }
