@@ -171,7 +171,7 @@ public:
         }
 
         auto dto = BetResponse::createShared();
-        game->PlaceBet(betRequest->bet, player, dto);
+        game->PlaceBet(betRequest->bet.getValue(-1), player, dto);
         return createDtoResponse(Status::CODE_200, dto);
     }
 
@@ -317,7 +317,7 @@ public:
         if (!bet) {
             return createResponse(Status::CODE_404, "Unable to find bet");
         }
-        std::string buyInsurance = insuranceRequest->insurance;
+        std::string buyInsurance = insuranceRequest->insurance.getValue("no");
         std::transform(buyInsurance.begin(), buyInsurance.end(), buyInsurance.begin(), ::tolower);
         bool bInsurance = buyInsurance == "true" || buyInsurance == "yes" || buyInsurance == "y";
         auto dto = StandResponse::createShared();
