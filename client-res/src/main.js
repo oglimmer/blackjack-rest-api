@@ -72,7 +72,7 @@ if (document.getElementById('editor')) {
         stop = false;
         const stats = {};
         let i = 0;
-        while(!stop) {
+        while (!stop) {
             document.getElementById('round').innerHTML = i++;
             await play(stats);
         }
@@ -140,11 +140,14 @@ if (document.getElementById('editor')) {
             data.dealerCards.concat(betResultResp.dealersAdditionalCard);
         }
         data.result = betResultResp.result;
-        wrapper()[INDEX_RESULT](data, stats);
+        data.dealerTotal = betResultResp.dealerTotal;
+        data.payout = betResultResp.payout;
+        const feedbackResult = wrapper()[INDEX_RESULT](data, stats);
 
         return {
             secondHand,
-            resp
+            resp,
+            feedbackResult
         }
     }
 
@@ -154,13 +157,15 @@ if (document.getElementById('editor')) {
         const statsDiv = document.getElementById('stats');
 
         const wrapper = new Function(editor.getValue() + "; " +
-            "if (typeof begin === \"undefined\") { var begin; }; " +
-            "if (typeof end === \"undefined\") { var end; }; " +
+            "if (typeof bet === \"undefined\") { var bet = () => {return 1;}; }; " +
+            "if (typeof command === \"undefined\") { var command = () => {return \"stand\";}; }; " +
+            "if (typeof insurance === \"undefined\") { var insurance = () => {return false;}; }; " +
+            "if (typeof result === \"undefined\") { var result = () => {}; }; " +
+            "if (typeof begin === \"undefined\") { var begin = () => {}; }; " +
+            "if (typeof end === \"undefined\") { var end = () => {}; }; " +
             "return [bet,command,insurance,result,begin,end];");
 
-        if (wrapper()[INDEX_BEGIN]) {
-            wrapper()[INDEX_BEGIN](stats);
-        }
+        wrapper()[INDEX_BEGIN](stats);
 
         const createPlayerRequest = new CreatePlayerRequest();
         const playerName = document.getElementById('playerName').value;
@@ -180,8 +185,9 @@ if (document.getElementById('editor')) {
         console.log(playerInfoResp);
         infoDiv.innerHTML = JSON.stringify(playerInfoResp);
 
+        let takeMoneyAtStopThisPlay = false;
         let maxMoney = playerInfoResp.cash;
-        while (!stop && playerInfoResp.cash > 0) {
+        while (!stop && playerInfoResp.cash > 0 && !takeMoneyAtStopThisPlay) {
             const createGameRequest = new CreateGameRequest();
             createGameRequest.deckId = deckResp.deckId;
             let data = {
@@ -221,14 +227,20 @@ if (document.getElementById('editor')) {
                 data.followActions = resp.followActions;
             }
 
-            let secondHand = null;
-            ({secondHand, resp} = await processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, false));
+            let secondHand = null, feedbackResult = null;
+            ({secondHand, resp, feedbackResult} = await processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, false));
+            if (feedbackResult===true) {
+                takeMoneyAtStopThisPlay = true;
+            }
 
             if (secondHand) {
                 data = secondHand.data;
                 betId = secondHand.betId;
                 resp.followActions = secondHand.data.followActions;
-                ({resp} = await processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, true));
+                ({resp, feedbackResult} = await processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, true));
+                if (feedbackResult===true) {
+                    takeMoneyAtStopThisPlay = true;
+                }
             }
 
             playerInfoResp = await promisify(api.getPlayer.bind(api))(playerResp.playerId);
@@ -241,9 +253,7 @@ if (document.getElementById('editor')) {
             }
         }
         cashDiv.innerHTML = "" + maxMoney + " (peak)";
-        if (wrapper()[INDEX_END]) {
-            wrapper()[INDEX_END](maxMoney, stats);
-        }
+        wrapper()[INDEX_END](maxMoney, stats);
         statsDiv.innerHTML = JSON.stringify(stats);
     }
 }

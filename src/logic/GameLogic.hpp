@@ -128,7 +128,7 @@ private:
 
     void Payout() const;
 
-    void Payout(std::shared_ptr<Bet> bet) const;
+    int GetPayoutValue(std::shared_ptr<Bet> bet) const;
 
     bool IsDone() const;
 

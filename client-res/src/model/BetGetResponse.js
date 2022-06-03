@@ -59,6 +59,9 @@ class BetGetResponse {
             if (data.hasOwnProperty('result')) {
                 obj['result'] = ApiClient.convertToType(data['result'], 'String');
             }
+            if (data.hasOwnProperty('payout')) {
+                obj['payout'] = ApiClient.convertToType(data['payout'], 'Number');
+            }
         }
         return obj;
     }
@@ -85,6 +88,11 @@ BetGetResponse.prototype['dealersAdditionalCard'] = undefined;
  * @member {String} result
  */
 BetGetResponse.prototype['result'] = undefined;
+
+/**
+ * @member {Number} payout
+ */
+BetGetResponse.prototype['payout'] = undefined;
 
 
 

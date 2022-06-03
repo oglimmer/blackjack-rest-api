@@ -8,5 +8,6 @@ Name | Type | Description | Notes
 **dealerTotal** | **Number** |  | [optional] 
 **dealersAdditionalCard** | **[String]** |  | [optional] 
 **result** | **String** |  | [optional] 
+**payout** | **Number** |  | [optional] 
 
 

@@ -32,6 +32,8 @@ class BetGetResponse : public oatpp::DTO {
     DTO_FIELD(Vector < String >, dealersAdditionalCard);
 
     DTO_FIELD(String, result);
+
+    DTO_FIELD(Int32, payout);
 };
 
 class BetRequest : public oatpp::DTO {

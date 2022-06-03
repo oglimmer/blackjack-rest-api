@@ -269,6 +269,7 @@ bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &respon
     const std::lock_guard<std::mutex> lockGuard(game_mutex);
     const int playerTotalValue = bet->GetDrawnCards()->GetValue();
     bool isDone = IsDone();
+    response->payout = 0;
     if (playerTotalValue > 21) {
         response->result = "You busted!!!";
     } else if (isDone) {
@@ -286,6 +287,7 @@ bool Game::AddResponse(std::shared_ptr<Bet> bet, BetGetResponse::Wrapper &respon
         } else {
             response->result = "You lost!!";
         }
+        response->payout = GetPayoutValue(bet);
     } else if (bet->IsDone()) {
         response->result = "Other bets still in progress";
     } else {
@@ -402,28 +404,31 @@ bool Game::allResultsChecked() const {
 
 void Game::Payout() const {
     if (IsDone()) {
-        std::for_each(bets.begin(), bets.end(), [&](const std::shared_ptr<Bet> &bet) { Payout(bet); });
+        std::for_each(bets.begin(), bets.end(),
+                      [&](const std::shared_ptr<Bet> &bet) { bet->GetPlayer()->AddCash(GetPayoutValue(bet)); });
     }
 }
 
-void Game::Payout(std::shared_ptr<Bet> bet) const {
+int Game::GetPayoutValue(std::shared_ptr<Bet> bet) const {
+    int payout = 0;
     int playerTotalValue = bet->GetDrawnCards()->GetValue();
     if (playerTotalValue <= 21) {
         int totalValueDealer = drawnCardsDealer->GetValue();
         if (bet->GetDrawnCards()->IsBlackJack() && drawnCardsDealer->IsBlackJack()) {
-            bet->GetPlayer()->AddCash(bet->GetBet());
+            payout += bet->GetBet();
         } else if (bet->GetDrawnCards()->IsBlackJack()) {
-            bet->GetPlayer()->AddCash(2.5 * bet->GetBet());
+            payout += 2.5 * bet->GetBet();
         } else if (totalValueDealer > 21 || playerTotalValue > totalValueDealer) {
-            bet->GetPlayer()->AddCash(2 * bet->GetBet());
+            payout += 2 * bet->GetBet();
         } else if (playerTotalValue == totalValueDealer) {
-            bet->GetPlayer()->AddCash(bet->GetBet());
+            payout += bet->GetBet();
         }
         // side bet
         if (drawnCardsDealer->IsBlackJack() && bet->IsInsuranceBought()) {
-            bet->GetPlayer()->AddCash(1.5 * bet->GetBet());
+            payout += 1.5 * bet->GetBet();
         }
     }
+    return payout;
 }
 
 bool Game::IsDone() const {
