@@ -138,10 +138,12 @@ public:
             return createResponse(Status::CODE_404, "Unable to find deck");
         }
 
+        bool shuffled = drawDeck->ReshuffleIfNeeded();
         auto id = gameReg.CreateGame(drawDeck);
 
         auto dto = CreateGameResponse::createShared();
         dto->gameId = id;
+        dto->shuffled = shuffled;
         return createDtoResponse(Status::CODE_200, dto);
     }
 

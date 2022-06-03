@@ -40,8 +40,12 @@
     <button id="startForever">Start forever</button>
     <button id="stop" disabled>Stop</button>
 </div>
-<div id="editor">function bet(cash, stats) {
-/* return how much you want to bet (1 to 1000) /*/
+<div id="editor">function bet(cash, shuffled, stats) {
+/*
+    shuffled // boolean, true if the deck was freshly shuffled (thus has all 52*6 cards)
+    cash // number, your current amount of cash
+    return how much you want to bet (1 to 1000)
+*/
     return Math.min(100, cash);
 }
 function command(data, stats) {

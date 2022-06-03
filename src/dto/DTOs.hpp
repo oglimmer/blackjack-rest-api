@@ -122,6 +122,7 @@ class CreateGameResponse : public oatpp::DTO {
     DTO_INIT(CreateGameResponse, DTO)
 
     DTO_FIELD(Int32, gameId);
+    DTO_FIELD(Boolean , shuffled);
 };
 
 class CreatePlayerRequest : public oatpp::DTO {

@@ -42,7 +42,7 @@ public:
 
     void shuffle();
 
-    void ReshuffleIfNeeded();
+    bool ReshuffleIfNeeded();
 
     bool IsOutDated() const;
 

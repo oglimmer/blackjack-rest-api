@@ -39,7 +39,6 @@ void DrawDeckRegistry::ClearTimedout() {
 /* ***************************************** GameRegistry ******************************************************* */
 
 int GameRegistry::CreateGame(std::shared_ptr<DrawDeck> drawDeck) {
-    drawDeck->ReshuffleIfNeeded();
     auto game = std::shared_ptr<Game>(new Game(drawDeck));
     int id = Rnd::GetInstance().GetEngine()();
     const std::lock_guard<std::mutex> lockGuard(games_mutex);

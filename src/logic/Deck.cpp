@@ -15,7 +15,7 @@ void Deck::AddCard(const std::shared_ptr<Card> card) {
     this->cards.push_back(card);
 }
 
-void Deck::ForEachCard(std::function<void(const std::shared_ptr<Card>&)> function) {
+void Deck::ForEachCard(std::function<void(const std::shared_ptr<Card> &)> function) {
     const std::lock_guard<std::mutex> lock_guard(cards_mutex);
     std::for_each(this->cards.begin(), this->cards.end(), function);
 }
@@ -94,13 +94,17 @@ void DrawDeck::shuffle() {
     }
 }
 
-void DrawDeck::ReshuffleIfNeeded() {
+bool DrawDeck::ReshuffleIfNeeded() {
     const std::lock_guard<std::mutex> lock_guard(cards_mutex);
+    OATPP_LOGD("DrawDeck", "[ReshuffleIfNeeded] Size=%d", cards.size());
     if (cards.size() < 52 && !Package::GetInstance().IsCheat()) {
         cards.clear();
         cards.insert(cards.end(), allCards.begin(), allCards.end());
         std::shuffle(begin(cards), end(cards), Rnd::GetInstance().GetEngine());
+        OATPP_LOGD("DrawDeck", "[ReshuffleIfNeeded] shuffled! Size=%d", cards.size());
+        return true;
     }
+    return false;
 }
 
 bool DrawDeck::IsOutDated() const {

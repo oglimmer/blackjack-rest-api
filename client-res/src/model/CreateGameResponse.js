@@ -50,6 +50,9 @@ class CreateGameResponse {
             if (data.hasOwnProperty('gameId')) {
                 obj['gameId'] = ApiClient.convertToType(data['gameId'], 'Number');
             }
+            if (data.hasOwnProperty('shuffled')) {
+                obj['shuffled'] = ApiClient.convertToType(data['shuffled'], 'Boolean');
+            }
         }
         return obj;
     }
@@ -61,6 +64,11 @@ class CreateGameResponse {
  * @member {Number} gameId
  */
 CreateGameResponse.prototype['gameId'] = undefined;
+
+/**
+ * @member {Boolean} shuffled
+ */
+CreateGameResponse.prototype['shuffled'] = undefined;
 
 
 

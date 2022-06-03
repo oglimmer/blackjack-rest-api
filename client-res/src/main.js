@@ -205,7 +205,7 @@ if (document.getElementById('editor')) {
             infoDiv.innerHTML = JSON.stringify(gameResp);
 
             const betRequest = new BetRequest();
-            betRequest.bet = wrapper()[INDEX_BET](playerInfoResp.cash, stats);
+            betRequest.bet = wrapper()[INDEX_BET](playerInfoResp.cash, gameResp.shuffled, stats);
             betRequest.playerId = playerResp.playerId;
 
             const betResp = await promisify(api.placeBet.bind(api))(gameResp.gameId, betRequest);
