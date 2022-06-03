@@ -89,7 +89,11 @@ function result(data, stats) {
 function begin(stats) {
     // called before a player and deck is created
 }
-function end(maxMoney, stats) {
+function cashUpdate(cash, stats) {
+    // called after a game was played
+    // return true; // if you want to stop playing with this player and start over again
+}
+function end(finalMoney, maxMoney, stats) {
     // called after a player went bankrupt
     // maxMoney is the highest amount of money this player had during its lifetime
 }

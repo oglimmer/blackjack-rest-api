@@ -83,7 +83,8 @@ if (document.getElementById('editor')) {
     const INDEX_INSURANCE = 2;
     const INDEX_RESULT = 3;
     const INDEX_BEGIN = 4;
-    const INDEX_END = 5;
+    const INDEX_CASHUPDATE = 5;
+    const INDEX_END = 6;
 
     async function processCommand(resp, data, betId, infoDiv, wrapper, stats, gameResp, hand2nd) {
         let secondHand = null;
@@ -162,8 +163,9 @@ if (document.getElementById('editor')) {
             "if (typeof insurance === \"undefined\") { var insurance = () => {return false;}; }; " +
             "if (typeof result === \"undefined\") { var result = () => {}; }; " +
             "if (typeof begin === \"undefined\") { var begin = () => {}; }; " +
+            "if (typeof cashUpdate === \"undefined\") { var cashUpdate = () => {}; }; " +
             "if (typeof end === \"undefined\") { var end = () => {}; }; " +
-            "return [bet,command,insurance,result,begin,end];");
+            "return [bet,command,insurance,result,begin,cashUpdate,end];");
 
         wrapper()[INDEX_BEGIN](stats);
 
@@ -251,9 +253,13 @@ if (document.getElementById('editor')) {
             if (maxMoney < playerInfoResp.cash) {
                 maxMoney = playerInfoResp.cash;
             }
+            feedbackResult = wrapper()[INDEX_CASHUPDATE](playerInfoResp.cash, stats);
+            if (feedbackResult===true) {
+                takeMoneyAtStopThisPlay = true;
+            }
         }
         cashDiv.innerHTML = "" + maxMoney + " (peak)";
-        wrapper()[INDEX_END](maxMoney, stats);
+        wrapper()[INDEX_END](playerInfoResp.cash, maxMoney, stats);
         statsDiv.innerHTML = JSON.stringify(stats);
     }
 }
