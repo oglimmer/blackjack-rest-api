@@ -9,6 +9,7 @@ import {
 
 import {promisify} from "./promisify.js"
 import ApiClient from "./ApiClient";
+import LZString from "lz-string";
 
 const DefaultApi = _DefaultApi;
 const CreatePlayerRequest = _CreatePlayerRequest;
@@ -42,6 +43,19 @@ function buttons(disabled) {
 }
 
 if (document.getElementById('editor')) {
+    document.getElementById('save').addEventListener('click', (event) => {
+        const compressed = LZString.compressToEncodedURIComponent(editor.getValue());
+        window.history.pushState("", "", "./play.html?s=" + compressed);
+    });
+    const queryString = window.location.search;
+    const params = new URLSearchParams(queryString);
+    const stateFromQuery = params.get("s");
+    if (stateFromQuery) {
+        const decompressed = LZString.decompressFromEncodedURIComponent(stateFromQuery);
+        editor.setValue(decompressed);
+        editor.selection.clearSelection();
+    }
+
     let stop = false;
     document.getElementById('stop').addEventListener('click', async (event) => {
         stop = true;

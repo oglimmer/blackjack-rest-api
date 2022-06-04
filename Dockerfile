@@ -3,9 +3,11 @@ FROM debian:11-slim
 RUN apt update && \
     apt install -y cmake g++ git nodejs npm
 
+# increase buffer otherwise "save to url" does not work for code > 3.5k
 RUN cd /home &&  \
     git clone https://github.com/oatpp/oatpp.git --depth=1 &&  \
-    cd oatpp/ &&  \
+    cd oatpp/ && \
+    sed -i -e 's/v_buff_size headersReaderMaxSize = 4096/v_buff_size headersReaderMaxSize = 16392/' src/oatpp/web/server/HttpProcessor.hpp && \
     mkdir build &&  \
     cd build &&  \
     cmake .. &&  \
