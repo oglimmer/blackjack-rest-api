@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -eu
+
+GAME_ID=$(</tmp/GAME_ID)
+BET_ID=$(</tmp/BET_ID)
+
+SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
+
+echo curl $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/split -X POST
+COMMAND_RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/split -X POST)
+
+echo $COMMAND_RESP|jq

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -eu
+
+SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
+
+echo curl $SERVER_BASE/deck -X POST
+DECK_RESP=$(curl -s $SERVER_BASE/deck -X POST)
+
+echo $DECK_RESP|jq
+
+DECK_ID=$(echo "$DECK_RESP"|jq -r '.deckId')
+
+echo $DECK_ID > /tmp/DECK_ID
