@@ -28,8 +28,8 @@ std::string StaticController::getMimeType(const std::string &filename) {
 std::shared_ptr<oatpp::web::protocol::http::outgoing::Response> StaticController::serviceFile(const String &filename) {
     const char *rootDir = std::getenv("STATIC_ROOT");
     const String &fullFilepath = rootDir + filename;
-    if (std::filesystem::exists(fullFilepath->c_str())) {
-        std::ifstream t(fullFilepath);
+    std::ifstream t(fullFilepath);
+    if (t.good()) {
         std::stringstream buffer;
         buffer << t.rdbuf();
         auto resp = createResponse(Status::CODE_200, buffer.str().c_str());
