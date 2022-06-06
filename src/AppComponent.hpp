@@ -19,6 +19,10 @@ public:
     std::shared_ptr<OutgoingResponse> intercept(const std::shared_ptr<IncomingRequest> &request,
                                                 const std::shared_ptr<OutgoingResponse> &response) override {
 
+        if (request->getStartingLine().path == "/health") {
+            return response;
+        }
+
         std::string ip("?");
         std::string ua("-");
         std::string referer("-");
