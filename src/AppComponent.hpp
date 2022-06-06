@@ -29,6 +29,10 @@ public:
         for (const auto &pair: request->getHeaders().getAll()) {
             if (std::string(static_cast<const char *>(pair.first.getData())) == "X-Forwarded-For") {
                 ip = static_cast<const char *>(pair.second.getData());
+                // multiple proxies may have added more than one X-Forwarded-For, just use the first one
+                if (ip.find(",") != std::string::npos) {
+                    ip = ip.substr(0, ip.find(",") - 1);
+                }
             }
             if (std::string(static_cast<const char *>(pair.first.getData())) == "User-Agent") {
                 ua = static_cast<const char *>(pair.second.getData());
