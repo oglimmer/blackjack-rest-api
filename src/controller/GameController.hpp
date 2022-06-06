@@ -60,9 +60,6 @@ public:
 
 private:
     int CreatePlayer(const std::shared_ptr<IncomingRequest> &request);
-
-    void LogAccess(const std::shared_ptr<IncomingRequest> &request, const std::string &endpoint);
-
 public:
 
     ADD_CORS(createPlayer)
@@ -73,7 +70,6 @@ public:
     }
 
     ENDPOINT("POST", "/v2/player", createPlayer, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/player");
         auto id = CreatePlayer(request);
         auto dto = CreatePlayerResponse::createShared();
         dto->playerId = id;
@@ -90,7 +86,6 @@ public:
     ENDPOINT("GET", "/v2/player/{playerId}", getPlayer,
              PATH(Int32, playerId),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "GET /v2/player/" + std::to_string(playerId));
         auto &reg = PlayerRegistry::GetInstance();
         auto player = reg.GetPlayer(playerId);
         if (!player) {
@@ -110,7 +105,6 @@ public:
     }
 
     ENDPOINT("POST", "/v2/deck", createDrawDeck, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/deck");
         auto &reg = DrawDeckRegistry::GetInstance();
         auto id = reg.CreateDrawDeck();
 
@@ -129,7 +123,6 @@ public:
     ENDPOINT("POST", "/v2/game", createGame,
              BODY_DTO(Object < CreateGameRequest > , createGameDto),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game");
         auto &drawDeckReg = DrawDeckRegistry::GetInstance();
         auto &gameReg = GameRegistry::GetInstance();
         auto drawDeck = drawDeckReg.GetDrawDeck(createGameDto->deckId.getValue(-1));
@@ -159,7 +152,6 @@ public:
              BODY_DTO(Object < BetRequest > , betRequest),
              PATH(Int32, gameId),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/bet");
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
@@ -187,7 +179,6 @@ public:
              PATH(Int32, gameId),
              PATH(Int32, betId),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/bet/" + std::to_string(betId) + "/double");
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
@@ -217,7 +208,6 @@ public:
              PATH(Int32, gameId),
              PATH(Int32, betId),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/bet/" + std::to_string(betId) + "/split");
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
@@ -247,7 +237,6 @@ public:
              PATH(Int32, gameId),
              PATH(Int32, betId),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/bet/" + std::to_string(betId) + "/hit");
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
@@ -277,7 +266,6 @@ public:
              PATH(Int32, gameId),
              PATH(Int32, betId),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/bet/" + std::to_string(betId) + "/stand");
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
@@ -308,7 +296,6 @@ public:
              PATH(Int32, betId),
              BODY_DTO(Object < InsuranceRequest > , insuranceRequest),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "POST /v2/game/" + std::to_string(gameId) + "/bet/" + std::to_string(betId) + "/insurance");
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
@@ -337,7 +324,6 @@ public:
              PATH(Int32, gameId),
              PATH(Int32, betId),
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "GET /v2/game/" + std::to_string(gameId) + "/bet/" + std::to_string(betId) + "");
         auto game = GameRegistry::GetInstance().GetGame(gameId);
         if (!game) {
             return createResponse(Status::CODE_404, "Unable to find game");
@@ -361,7 +347,6 @@ public:
 
     ENDPOINT("GET", "/v2/highscore", highscore,
              REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        LogAccess(request, "GET /v2/highscore");
         auto list = HighscoreList::GetInstance().GetHighscores();
         return createDtoResponse(Status::CODE_200, list);
     }
