@@ -11,4 +11,4 @@ SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
 echo curl $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{"insurance": '{$INSURANCE}'}'
 COMMAND_RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet/${BET_ID}/insurance -d '{"insurance": '{$INSURANCE}'}')
 
-echo $COMMAND_RESP|jq
+echo $COMMAND_RESP|jq 2>/dev/null || echo $COMMAND_RESP

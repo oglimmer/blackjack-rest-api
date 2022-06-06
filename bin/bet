@@ -11,7 +11,7 @@ SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
 echo curl $SERVER_BASE/game -d '{"deckId": '${DECK_ID}'}'
 GAME_RESP=$(curl -s $SERVER_BASE/game -d '{"deckId": '${DECK_ID}'}')
 
-echo $GAME_RESP|jq
+echo $GAME_RESP|jq 2>/dev/null || echo $GAME_RESP
 
 GAME_ID=$(echo "$GAME_RESP"|jq -r '.gameId')
 
@@ -20,7 +20,7 @@ echo $GAME_ID > /tmp/GAME_ID
 echo curl $SERVER_BASE/game/${GAME_ID}/bet -d '{"playerId": '${PLAYER_ID}', "bet": '${BET}'}'
 BET_RESP=$(curl -s $SERVER_BASE/game/${GAME_ID}/bet -d '{"playerId": '${PLAYER_ID}', "bet": '${BET}'}')
 
-echo $BET_RESP|jq
+echo $BET_RESP|jq 2>/dev/null || echo $BET_RESP
 
 BET_ID=$(echo "$BET_RESP"|jq -r '.betId')
 

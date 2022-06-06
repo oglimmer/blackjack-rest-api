@@ -9,4 +9,4 @@ SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
 echo curl $SERVER_BASE/player/${PLAYER_ID}
 PLAYER_RESP=$(curl -s $SERVER_BASE/player/${PLAYER_ID})
 
-echo $PLAYER_RESP|jq
+echo $PLAYER_RESP|jq 2>/dev/null || echo $PLAYER_RESP

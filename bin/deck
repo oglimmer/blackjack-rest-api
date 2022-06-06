@@ -7,7 +7,7 @@ SERVER_BASE=${SERVER_BASE:-https://bj.oglimmer.de/v2}
 echo curl $SERVER_BASE/deck -X POST
 DECK_RESP=$(curl -s $SERVER_BASE/deck -X POST)
 
-echo $DECK_RESP|jq
+echo $DECK_RESP|jq 2>/dev/null || echo $DECK_RESP
 
 DECK_ID=$(echo "$DECK_RESP"|jq -r '.deckId')
 
