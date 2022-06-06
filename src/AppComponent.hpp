@@ -19,8 +19,9 @@ public:
     std::shared_ptr<OutgoingResponse> intercept(const std::shared_ptr<IncomingRequest> &request,
                                                 const std::shared_ptr<OutgoingResponse> &response) override {
 
-        std::string ip("no X-Forwarded-For");
-        std::string ua("no user-agent");
+        std::string ip("?");
+        std::string ua("-");
+        std::string referer("-");
         for (const auto &pair: request->getHeaders().getAll()) {
             if (std::string(static_cast<const char *>(pair.first.getData())) == "X-Forwarded-For") {
                 ip = static_cast<const char *>(pair.second.getData());
@@ -28,9 +29,12 @@ public:
             if (std::string(static_cast<const char *>(pair.first.getData())) == "User-Agent") {
                 ua = static_cast<const char *>(pair.second.getData());
             }
+            if (std::string(static_cast<const char *>(pair.first.getData())) == "Referer") {
+                referer = static_cast<const char *>(pair.second.getData());
+            }
         }
 
-        if (ip == "no X-Forwarded-For") {
+        if (ip == "?") {
             auto &context = request->getConnection()->getInputStreamContext();
             for (const auto &pair: context.getProperties().getAll()) {
                 if (std::string(static_cast<const char *>(pair.first.getData())) == "peer_address") {
@@ -46,9 +50,9 @@ public:
         auto httpRequest =
                 request->getStartingLine().method.std_str() + " " + request->getStartingLine().path.std_str() + " " +
                 request->getStartingLine().protocol.std_str();
-        OATPP_LOGI("CommonLogInterceptor", "%s - - [%s] \"%s\" %d %ld \"%s\"", ip.c_str(), ss.str().c_str(),
-                   httpRequest.c_str(), response->getStatus().code,
-                   response->getBody()->getKnownSize(), ua.c_str());
+        v_int64 i = response->getBody() ? response->getBody()->getKnownSize() : 0;
+        OATPP_LOGI("CommonLogInterceptor", "%s - - [%s] \"%s\" %d %ld \"%s\" \"%s\"", ip.c_str(), ss.str().c_str(),
+                   httpRequest.c_str(), response->getStatus().code, i, ua.c_str(), referer.c_str());
 
         return response;
     }
