@@ -39,7 +39,7 @@ cmake ..
 make install
 
 # oatpp-swagger
-git clone https://github.com/oglimmer/oatpp-swagger.git --depth=1
+git clone https://github.com/oatpp/oatpp-swagger.git --depth=1
 cd oatpp-swagger/
 mkdir build
 cd build
