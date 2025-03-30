@@ -36,6 +36,6 @@ std::shared_ptr<oatpp::web::protocol::http::outgoing::Response> StaticController
         resp->putHeader("Content-Type", getMimeType(filename));
         return resp;
     } else {
-        return createResponse(Status::CODE_404);
+        return createResponse(Status::CODE_404, "");
     }
 }

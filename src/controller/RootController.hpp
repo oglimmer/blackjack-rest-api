@@ -20,20 +20,20 @@ public:
 
 
     ENDPOINT("GET", "/", rootRedirect, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        auto resp = createResponse(Status::CODE_301);
+        auto resp = createResponse(Status::CODE_301, "");
         resp->putHeader("Location", "/index.html");
         return resp;
     }
 
 
     ENDPOINT("GET", "/v2/", root, REQUEST(std::shared_ptr<IncomingRequest>, request)) {
-        auto resp = createResponse(Status::CODE_301);
+        auto resp = createResponse(Status::CODE_301, "");
         resp->putHeader("Location", "/swagger/ui");
         return resp;
     }
 
     ENDPOINT("GET", "/health", info) {
-        return createResponse(Status::CODE_200);
+        return createResponse(Status::CODE_200, "");
     }
 
 };

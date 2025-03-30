@@ -7,6 +7,8 @@ RUN apt update && \
 RUN cd /home &&  \
     git clone https://github.com/oatpp/oatpp.git --depth=1 &&  \
     cd oatpp/ && \
+    git fetch --tags && \
+    git checkout 1.3.0 && \
     sed -i -e 's/v_buff_size headersReaderMaxSize = 4096/v_buff_size headersReaderMaxSize = 16392/' src/oatpp/web/server/HttpProcessor.hpp && \
     mkdir build &&  \
     cd build &&  \
@@ -15,6 +17,8 @@ RUN cd /home &&  \
     cd /home &&  \
     git clone https://github.com/oatpp/oatpp-swagger.git --depth=1 && \
     cd oatpp-swagger/ &&  \
+    git fetch --tags && \
+    git checkout 1.3.0 && \
     mkdir build &&  \
     cd build &&  \
     cmake .. &&  \

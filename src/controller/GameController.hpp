@@ -19,7 +19,7 @@ public:
     }
 
     std::shared_ptr<oatpp::web::protocol::http::outgoing::Response>
-    handleError(const std::exception_ptr &error) override {
+    handleError(const std::exception_ptr &error) {
         try {
             std::rethrow_exception(error);
         } catch (const oatpp::web::protocol::CommunicationError &e) {
